@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { useSSEConnection } from '../../hooks/useSSEConnection'
 
+const DEFAULT_URL = 'https://broadcast-server-506664317461.us-central1.run.app/subscribe?deviceId=ifBqqUHSkf1DZZe1DTaW9A=='
+
 export function ConnectPanel() {
   const [open, setOpen] = useState(false)
-  const [url, setUrl] = useState('')
+  const [url, setUrl] = useState(DEFAULT_URL)
   const panelRef = useRef<HTMLDivElement>(null)
   const { connected, isMock, connect, disconnect } = useSSEConnection()
 
@@ -26,7 +28,7 @@ export function ConnectPanel() {
 
   const handleDisconnect = () => {
     disconnect()
-    setUrl('')
+    setUrl(DEFAULT_URL)
   }
 
   return (

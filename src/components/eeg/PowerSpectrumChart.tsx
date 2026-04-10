@@ -4,7 +4,6 @@ import { LineChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, LegendComponent, MarkAreaComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { useSensorDataStore } from '../../stores/sensorDataStore'
-import { useConnectionStore } from '../../stores/connectionStore'
 
 echarts.use([LineChart, GridComponent, TooltipComponent, LegendComponent, MarkAreaComponent, CanvasRenderer])
 
@@ -35,8 +34,6 @@ export function PowerSpectrumChart() {
   const chartInstance = useRef<echarts.ECharts | null>(null)
   const fp1 = useSensorDataStore((s) => s.eegFp1)
   const fp2 = useSensorDataStore((s) => s.eegFp2)
-  const connected = useConnectionStore((s) => s.connected)
-
   const spectrumData = useMemo(() => {
     const ch1Spectrum = computeSpectrum(fp1, 250)
     const ch2Spectrum = computeSpectrum(fp2, 250)
@@ -94,20 +91,17 @@ export function PowerSpectrumChart() {
     })
   }, [spectrumData])
 
-  if (!connected || !spectrumData.hasData) {
-    return (
-      <div className="w-full h-72 flex items-center justify-center">
-        <div className="text-center space-y-2">
-          <div className="text-4xl">🌈</div>
-          <div className="text-sm text-text-secondary">데이터 대기 중...</div>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div>
+    <div className="relative">
       <div ref={chartRef} className="w-full h-72" />
+      {!spectrumData.hasData && (
+        <div className="absolute inset-0 flex items-center justify-center bg-bg-card/80">
+          <div className="text-center space-y-2">
+            <div className="text-4xl">🌈</div>
+            <div className="text-sm text-text-secondary">데이터 대기 중...</div>
+          </div>
+        </div>
+      )}
       <div className="mt-2 flex justify-center gap-4 text-xs">
         <div className="flex items-center gap-1"><div className="w-3 h-3 bg-blue-500 rounded-full" /><span className="text-text-secondary">FP1 (Ch1)</span></div>
         <div className="flex items-center gap-1"><div className="w-3 h-3 bg-red-500 rounded-full" /><span className="text-text-secondary">FP2 (Ch2)</span></div>

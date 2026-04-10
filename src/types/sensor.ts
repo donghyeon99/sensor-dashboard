@@ -17,7 +17,16 @@ export interface AccSample {
   x: number
   y: number
   z: number
+  magnitude?: number
   timestamp: number
+}
+
+export interface AccAnalysis {
+  activityState: string
+  intensity: number
+  stability: number
+  avgMovement: number
+  maxMovement: number
 }
 
 // Analysis types
@@ -38,6 +47,11 @@ export interface EegAnalysis {
 export interface PpgAnalysis {
   bpm: number
   spo2: number | null
+  sdnn?: number
+  rmssd?: number
+  pnn50?: number
+  stressIndex?: number
+  lfHfRatio?: number
 }
 
 // SSE message payload
@@ -46,7 +60,8 @@ export interface SensorPayload {
   eegAnalysis?: EegAnalysis & Record<string, unknown>
   ppgAnalysis?: PpgAnalysis & Record<string, unknown>
   ppgRaw?: PpgRawSample[]
-  accelerometer?: AccSample[]
+  accRaw?: AccSample[]
+  accAnalysis?: AccAnalysis & Record<string, unknown>
   battery?: { level: number }
 }
 

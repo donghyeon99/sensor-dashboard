@@ -28,3 +28,4 @@ backup/
 
 # bkit state
 .bkit/
+*.png

@@ -4,7 +4,6 @@ import { LineChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { useSensorDataStore } from '../../stores/sensorDataStore'
-import { useConnectionStore } from '../../stores/connectionStore'
 
 echarts.use([LineChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
 
@@ -13,7 +12,6 @@ export function PPGRawChart() {
   const chartInstance = useRef<echarts.ECharts | null>(null)
   const ir = useSensorDataStore((s) => s.ppgIr)
   const red = useSensorDataStore((s) => s.ppgRed)
-  const connected = useConnectionStore((s) => s.connected)
 
   useEffect(() => {
     if (!chartRef.current) return
@@ -21,8 +19,8 @@ export function PPGRawChart() {
     chartInstance.current.setOption({
       tooltip: { trigger: 'axis' },
       legend: { data: ['IR', 'Red'], top: 5, textStyle: { color: '#8888aa', fontSize: 11 } },
-      grid: { left: '10%', right: '5%', bottom: '12%', top: '15%' },
-      xAxis: { type: 'value', axisLabel: { show: false }, splitLine: { show: false } },
+      grid: { left: '10%', right: '5%', bottom: '8%', top: '15%' },
+      xAxis: { type: 'value', show: false },
       yAxis: { type: 'value', name: 'ADC', nameLocation: 'middle', nameGap: 45, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } }, axisLabel: { color: '#8888aa', fontSize: 10 } },
       series: [
         { name: 'IR', type: 'line', data: [], lineStyle: { color: '#a855f7', width: 1.5 }, symbol: 'none', animation: false },
@@ -36,24 +34,26 @@ export function PPGRawChart() {
 
   useEffect(() => {
     if (!chartInstance.current) return
+    const irData = ir.map((p, i) => [i, p.value])
+    const redData = red.map((p, i) => [i, p.value])
+    const maxLen = Math.max(irData.length, redData.length, 1)
     chartInstance.current.setOption({
-      series: [
-        { data: ir.map((p) => [p.index, p.value]) },
-        { data: red.map((p) => [p.index, p.value]) },
-      ],
+      xAxis: { min: 0, max: maxLen - 1 },
+      series: [{ data: irData }, { data: redData }],
     })
   }, [ir, red])
 
-  if (!connected || ir.length === 0) {
-    return (
-      <div className="w-full h-64 flex items-center justify-center">
-        <div className="text-center space-y-2">
-          <div className="text-4xl">❤️</div>
-          <div className="text-sm text-text-secondary">PPG 데이터 대기 중...</div>
+  return (
+    <div className="relative w-full h-64">
+      <div ref={chartRef} className="w-full h-full" />
+      {ir.length === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center bg-bg-card/80">
+          <div className="text-center space-y-2">
+            <div className="text-4xl">❤️</div>
+            <div className="text-sm text-text-secondary">PPG 데이터 대기 중...</div>
+          </div>
         </div>
-      </div>
-    )
-  }
-
-  return <div ref={chartRef} className="w-full h-64" />
+      )}
+    </div>
+  )
 }

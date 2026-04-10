@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { EegAnalysis, PpgAnalysis, DataPoint, SensorPayload } from '../types/sensor'
+import type { EegAnalysis, PpgAnalysis, AccAnalysis, DataPoint, SensorPayload } from '../types/sensor'
 
 const EEG_BUFFER_SIZE = 1000  // ~4 seconds at 250Hz
 const PPG_BUFFER_SIZE = 200   // ~4 seconds at 50Hz
@@ -28,6 +28,7 @@ interface SensorDataState {
   accZ: DataPoint[]
   accMagnitude: DataPoint[]
   accSampleIndex: number
+  accAnalysis: AccAnalysis | null
 
   // Battery
   batteryLevel: number | null
@@ -59,6 +60,7 @@ export const useSensorDataStore = create<SensorDataState>((set) => ({
   accZ: [],
   accMagnitude: [],
   accSampleIndex: 0,
+  accAnalysis: null,
 
   batteryLevel: null,
   messageCount: 0,
@@ -121,7 +123,12 @@ export const useSensorDataStore = create<SensorDataState>((set) => ({
       const p = payload.ppgAnalysis
       updates.ppgAnalysis = {
         bpm: p.bpm ?? 0,
-        spo2: p.spo2 ?? null,
+        spo2: (p.spo2 as number) ?? null,
+        sdnn: p.sdnn as number | undefined,
+        rmssd: p.rmssd as number | undefined,
+        pnn50: p.pnn50 as number | undefined,
+        stressIndex: p.stressIndex as number | undefined,
+        lfHfRatio: p.lfHfRatio as number | undefined,
       }
 
       const hIdx = state.ppgHistoryIndex + 1
@@ -135,18 +142,18 @@ export const useSensorDataStore = create<SensorDataState>((set) => ({
       }
     }
 
-    // Accelerometer
-    if (payload.accelerometer && payload.accelerometer.length > 0) {
+    // ACC Raw
+    if (payload.accRaw && payload.accRaw.length > 0) {
       let idx = state.accSampleIndex
       const newX: DataPoint[] = []
       const newY: DataPoint[] = []
       const newZ: DataPoint[] = []
       const newMag: DataPoint[] = []
-      for (const sample of payload.accelerometer) {
+      for (const sample of payload.accRaw) {
         newX.push({ index: idx, value: sample.x })
         newY.push({ index: idx, value: sample.y })
         newZ.push({ index: idx, value: sample.z })
-        newMag.push({ index: idx, value: Math.sqrt(sample.x ** 2 + sample.y ** 2 + sample.z ** 2) })
+        newMag.push({ index: idx, value: sample.magnitude ?? Math.sqrt(sample.x ** 2 + sample.y ** 2 + sample.z ** 2) })
         idx++
       }
       updates.accX = [...state.accX, ...newX].slice(-ACC_BUFFER_SIZE)
@@ -154,6 +161,18 @@ export const useSensorDataStore = create<SensorDataState>((set) => ({
       updates.accZ = [...state.accZ, ...newZ].slice(-ACC_BUFFER_SIZE)
       updates.accMagnitude = [...state.accMagnitude, ...newMag].slice(-ACC_BUFFER_SIZE)
       updates.accSampleIndex = idx
+    }
+
+    // ACC Analysis
+    if (payload.accAnalysis) {
+      const acc = payload.accAnalysis
+      updates.accAnalysis = {
+        activityState: acc.activityState as string,
+        intensity: acc.intensity as number,
+        stability: acc.stability as number,
+        avgMovement: acc.avgMovement as number,
+        maxMovement: acc.maxMovement as number,
+      }
     }
 
     // Battery
@@ -167,7 +186,7 @@ export const useSensorDataStore = create<SensorDataState>((set) => ({
   resetData: () => set({
     eegFp1: [], eegFp2: [], eegAnalysis: null, eegSampleIndex: 0,
     ppgIr: [], ppgRed: [], ppgAnalysis: null, bpmHistory: [], spo2History: [], ppgSampleIndex: 0, ppgHistoryIndex: 0,
-    accX: [], accY: [], accZ: [], accMagnitude: [], accSampleIndex: 0,
+    accX: [], accY: [], accZ: [], accMagnitude: [], accSampleIndex: 0, accAnalysis: null,
     batteryLevel: null, messageCount: 0,
   }),
 }))

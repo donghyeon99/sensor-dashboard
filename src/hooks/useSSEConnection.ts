@@ -9,39 +9,63 @@ export function useSSEConnection() {
   const messageCount = useSensorDataStore((s) => s.messageCount)
 
   const connect = useCallback((sseUrl: string) => {
+    console.log('🔌 Connecting to:', sseUrl)
+
     // Close existing connection
     const existing = useConnectionStore.getState().eventSource
     if (existing) {
+      console.log('🔌 Closing existing connection')
       existing.close()
     }
 
     resetData()
     setUrl(sseUrl)
     setIsMock(sseUrl.includes('mock'))
+    setConnected(true) // Set connected immediately on user action
 
-    const es = new EventSource(sseUrl)
-    setEventSource(es)
+    try {
+      const es = new EventSource(sseUrl)
+      setEventSource(es)
 
-    es.onopen = () => setConnected(true)
-
-    es.onmessage = (event) => {
-      const data: SSEMessage = JSON.parse(event.data)
-
-      // Skip connection confirmation message
-      if (data.type === 'connected') return
-
-      if (data.payload) {
-        updateFromPayload(data.payload)
+      es.onopen = () => {
+        console.log('✅ SSE onopen fired')
+        setConnected(true)
       }
-    }
 
-    es.onerror = () => {
+      es.onmessage = (event) => {
+        const data: SSEMessage = JSON.parse(event.data)
+
+        // Ensure connected state on any message
+        if (!useConnectionStore.getState().connected) {
+          setConnected(true)
+        }
+
+        // Skip connection confirmation message
+        if (data.type === 'connected') {
+          console.log('✅ SSE server confirmed:', data.subscribers, 'subscribers')
+          return
+        }
+
+        if (data.payload) {
+          updateFromPayload(data.payload)
+        }
+      }
+
+      es.onerror = (e) => {
+        console.warn('⚠️ SSE error:', e)
+        if (es.readyState === EventSource.CLOSED) {
+          console.error('❌ SSE connection closed')
+          setConnected(false)
+        }
+      }
+    } catch (err) {
+      console.error('❌ Failed to create EventSource:', err)
       setConnected(false)
-      // EventSource auto-reconnects
     }
   }, [resetData, setUrl, setIsMock, setEventSource, setConnected, updateFromPayload])
 
   const disconnect = useCallback(() => {
+    console.log('🔌 Disconnecting')
     const es = useConnectionStore.getState().eventSource
     if (es) {
       es.close()

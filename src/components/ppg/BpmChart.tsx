@@ -4,7 +4,6 @@ import { LineChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { useSensorDataStore } from '../../stores/sensorDataStore'
-import { useConnectionStore } from '../../stores/connectionStore'
 
 echarts.use([LineChart, GridComponent, TooltipComponent, CanvasRenderer])
 
@@ -12,15 +11,14 @@ export function BpmChart() {
   const chartRef = useRef<HTMLDivElement>(null)
   const chartInstance = useRef<echarts.ECharts | null>(null)
   const bpmHistory = useSensorDataStore((s) => s.bpmHistory)
-  const connected = useConnectionStore((s) => s.connected)
 
   useEffect(() => {
     if (!chartRef.current) return
     chartInstance.current = echarts.init(chartRef.current)
     chartInstance.current.setOption({
       tooltip: { trigger: 'axis', formatter: (params: any) => `${params[0]?.value?.[1]?.toFixed(0)} BPM` },
-      grid: { left: '12%', right: '5%', bottom: '12%', top: '8%' },
-      xAxis: { type: 'value', axisLabel: { show: false }, splitLine: { show: false } },
+      grid: { left: '12%', right: '5%', bottom: '8%', top: '8%' },
+      xAxis: { type: 'value', show: false },
       yAxis: { type: 'value', name: 'BPM', nameLocation: 'middle', nameGap: 40, min: 40, max: 140, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } }, axisLabel: { color: '#8888aa', fontSize: 10 } },
       series: [{
         type: 'line', data: [], lineStyle: { color: '#ef4444', width: 2 },
@@ -35,19 +33,24 @@ export function BpmChart() {
 
   useEffect(() => {
     if (!chartInstance.current) return
-    chartInstance.current.setOption({ series: [{ data: bpmHistory.map((p) => [p.index, p.value]) }] })
+    const chartData = bpmHistory.map((p, i) => [i, p.value])
+    chartInstance.current.setOption({
+      xAxis: { min: 0, max: Math.max(chartData.length - 1, 1) },
+      series: [{ data: chartData }],
+    })
   }, [bpmHistory])
 
-  if (!connected || bpmHistory.length === 0) {
-    return (
-      <div className="w-full h-64 flex items-center justify-center">
-        <div className="text-center space-y-2">
-          <div className="text-4xl">💓</div>
-          <div className="text-sm text-text-secondary">BPM 데이터 대기 중...</div>
+  return (
+    <div className="relative w-full h-64">
+      <div ref={chartRef} className="w-full h-full" />
+      {bpmHistory.length === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center bg-bg-card/80">
+          <div className="text-center space-y-2">
+            <div className="text-4xl">💓</div>
+            <div className="text-sm text-text-secondary">BPM 데이터 대기 중...</div>
+          </div>
         </div>
-      </div>
-    )
-  }
-
-  return <div ref={chartRef} className="w-full h-64" />
+      )}
+    </div>
+  )
 }

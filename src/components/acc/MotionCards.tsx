@@ -7,23 +7,24 @@ export function MotionCards() {
   const accY = useSensorDataStore((s) => s.accY)
   const accZ = useSensorDataStore((s) => s.accZ)
   const accMagnitude = useSensorDataStore((s) => s.accMagnitude)
+  const accAnalysis = useSensorDataStore((s) => s.accAnalysis)
   const connected = useConnectionStore((s) => s.connected)
 
   const metrics = useMemo(() => {
-    if (accMagnitude.length === 0) return null
+    if (accMagnitude.length === 0 && !accAnalysis) return null
     const lastX = accX[accX.length - 1]?.value ?? 0
     const lastY = accY[accY.length - 1]?.value ?? 0
     const lastZ = accZ[accZ.length - 1]?.value ?? 0
     const lastMag = accMagnitude[accMagnitude.length - 1]?.value ?? 0
 
-    // Simple motion detection: if recent magnitude variance is high
-    const recentMag = accMagnitude.slice(-25) // last 1 second
-    const avgMag = recentMag.reduce((s, p) => s + p.value, 0) / recentMag.length
-    const variance = recentMag.reduce((s, p) => s + (p.value - avgMag) ** 2, 0) / recentMag.length
-    const isMoving = variance > 0.01
-
-    return { lastX, lastY, lastZ, lastMag, isMoving, variance }
-  }, [accX, accY, accZ, accMagnitude])
+    return {
+      lastX, lastY, lastZ, lastMag,
+      activityState: accAnalysis?.activityState ?? 'unknown',
+      intensity: accAnalysis?.intensity ?? 0,
+      stability: accAnalysis?.stability ?? 0,
+      avgMovement: accAnalysis?.avgMovement ?? 0,
+    }
+  }, [accX, accY, accZ, accMagnitude, accAnalysis])
 
   if (!connected || !metrics) {
     return (
@@ -40,12 +41,12 @@ export function MotionCards() {
     { label: 'Z축', value: metrics.lastZ.toFixed(3), unit: 'g', color: 'bg-blue-500' },
     { label: 'Magnitude', value: metrics.lastMag.toFixed(3), unit: 'g', color: 'bg-yellow-500' },
     {
-      label: '움직임 상태',
-      value: metrics.isMoving ? 'Moving' : 'Still',
+      label: '활동 상태',
+      value: metrics.activityState,
       unit: '',
-      color: metrics.isMoving ? 'bg-coral' : 'bg-teal',
+      color: metrics.activityState === 'stationary' ? 'bg-teal' : 'bg-coral',
     },
-    { label: '움직임 분산', value: metrics.variance.toFixed(4), unit: '', color: 'bg-purple-500' },
+    { label: '안정도', value: `${metrics.stability}`, unit: '%', color: 'bg-purple-500' },
   ]
 
   return (
