@@ -10,6 +10,7 @@ interface SensorDataState {
   // EEG
   eegFp1: DataPoint[]
   eegFp2: DataPoint[]
+  eegSignalQuality: DataPoint[]
   eegAnalysis: EegAnalysis | null
   eegSampleIndex: number
 
@@ -44,6 +45,7 @@ interface SensorDataState {
 export const useSensorDataStore = create<SensorDataState>((set) => ({
   eegFp1: [],
   eegFp2: [],
+  eegSignalQuality: [],
   eegAnalysis: null,
   eegSampleIndex: 0,
 
@@ -75,13 +77,18 @@ export const useSensorDataStore = create<SensorDataState>((set) => ({
       let idx = state.eegSampleIndex
       const newFp1: DataPoint[] = []
       const newFp2: DataPoint[] = []
+      const newSQ: DataPoint[] = []
       for (const sample of payload.eegRaw) {
         newFp1.push({ index: idx, value: sample.fp1 })
         newFp2.push({ index: idx, value: sample.fp2 })
+        // signalQuality: 0 = best, higher = worse → invert to 0-100% (100 = best)
+        const sqValue = Math.max(0, 100 - (sample.signalQuality ?? 0))
+        newSQ.push({ index: idx, value: sqValue })
         idx++
       }
       updates.eegFp1 = [...state.eegFp1, ...newFp1].slice(-EEG_BUFFER_SIZE)
       updates.eegFp2 = [...state.eegFp2, ...newFp2].slice(-EEG_BUFFER_SIZE)
+      updates.eegSignalQuality = [...state.eegSignalQuality, ...newSQ].slice(-EEG_BUFFER_SIZE)
       updates.eegSampleIndex = idx
     }
 
@@ -184,7 +191,7 @@ export const useSensorDataStore = create<SensorDataState>((set) => ({
   }),
 
   resetData: () => set({
-    eegFp1: [], eegFp2: [], eegAnalysis: null, eegSampleIndex: 0,
+    eegFp1: [], eegFp2: [], eegSignalQuality: [], eegAnalysis: null, eegSampleIndex: 0,
     ppgIr: [], ppgRed: [], ppgAnalysis: null, bpmHistory: [], spo2History: [], ppgSampleIndex: 0, ppgHistoryIndex: 0,
     accX: [], accY: [], accZ: [], accMagnitude: [], accSampleIndex: 0, accAnalysis: null,
     batteryLevel: null, messageCount: 0,

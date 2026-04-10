@@ -30,7 +30,9 @@ export function MotionCards() {
     return (
       <div className="text-center py-8">
         <div className="text-4xl mb-2">📐</div>
-        <div className="text-sm text-text-secondary">데이터 대기 중...</div>
+        <div className="text-sm text-text-secondary">
+          {connected ? '모션 데이터 수신 대기 중...' : 'Connect 버튼을 눌러 연결해주세요'}
+        </div>
       </div>
     )
   }

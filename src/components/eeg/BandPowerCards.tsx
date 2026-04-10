@@ -3,11 +3,11 @@ import { useSensorDataStore } from '../../stores/sensorDataStore'
 import { useConnectionStore } from '../../stores/connectionStore'
 
 const BANDS = [
-  { key: 'delta', name: '델타파', range: '1-4Hz', color: 'bg-amber-600', min: 1, max: 4 },
-  { key: 'theta', name: '세타파', range: '4-8Hz', color: 'bg-orange-500', min: 4, max: 8 },
-  { key: 'alpha', name: '알파파', range: '8-13Hz', color: 'bg-green-500', min: 8, max: 13 },
-  { key: 'beta', name: '베타파', range: '13-30Hz', color: 'bg-blue-500', min: 13, max: 30 },
-  { key: 'gamma', name: '감마파', range: '30-45Hz', color: 'bg-purple-500', min: 30, max: 45 },
+  { key: 'delta', name: '델타파', range: '1-4Hz', color: 'bg-amber-600', min: 1, max: 4, desc: '깊은 수면' },
+  { key: 'theta', name: '세타파', range: '4-8Hz', color: 'bg-orange-500', min: 4, max: 8, desc: '졸음/명상' },
+  { key: 'alpha', name: '알파파', range: '8-13Hz', color: 'bg-green-500', min: 8, max: 13, desc: '이완/안정' },
+  { key: 'beta', name: '베타파', range: '13-30Hz', color: 'bg-blue-500', min: 13, max: 30, desc: '집중/사고' },
+  { key: 'gamma', name: '감마파', range: '30-45Hz', color: 'bg-purple-500', min: 30, max: 45, desc: '고도 인지' },
 ]
 
 function computeBandPower(data: { value: number }[], sampleRate: number, fMin: number, fMax: number): { ch: number } {
@@ -54,7 +54,9 @@ export function BandPowerCards() {
     return (
       <div className="text-center py-8">
         <div className="text-4xl mb-2">🧠</div>
-        <div className="text-sm text-text-secondary">데이터 대기 중...</div>
+        <div className="text-sm text-text-secondary">
+          {connected ? '밴드 파워 데이터 수신 대기 중...' : 'Connect 버튼을 눌러 연결해주세요'}
+        </div>
       </div>
     )
   }
@@ -62,7 +64,7 @@ export function BandPowerCards() {
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
       {bandData.map((band) => (
-        <div key={band.key} className="bg-bg-elevated/50 border border-border rounded-lg p-3 hover:bg-bg-elevated/70 transition-colors">
+        <div key={band.key} className="bg-bg-elevated/50 border border-border rounded-xl p-3 hover:bg-bg-elevated/70 transition-colors">
           <div className="flex items-center justify-between mb-2">
             <div className={`w-2.5 h-2.5 rounded-full ${band.color}`} />
             <span className="text-[10px] text-text-muted">dB</span>
@@ -101,9 +103,9 @@ export function BandPowerCards() {
             </div>
           </div>
 
-          <div className="text-sm font-medium text-text-primary">{band.name}</div>
-          <div className="text-[10px] text-text-muted">{band.range}</div>
-          <div className="text-[10px] text-cyan-300 mt-1">차이: {Math.abs(band.ch1 - band.ch2).toFixed(1)} dB</div>
+          <div className="text-sm font-semibold text-text-primary">{band.name}</div>
+          <div className="text-[10px] text-text-muted">{band.range} · {band.desc}</div>
+          <div className="text-[10px] text-cyan-300 mt-1">좌우 차이: {Math.abs(band.ch1 - band.ch2).toFixed(1)} dB</div>
         </div>
       ))}
     </div>

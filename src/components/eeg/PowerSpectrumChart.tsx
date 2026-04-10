@@ -4,6 +4,7 @@ import { LineChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, LegendComponent, MarkAreaComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { useSensorDataStore } from '../../stores/sensorDataStore'
+import { EmptyState } from '../layout/EmptyState'
 
 echarts.use([LineChart, GridComponent, TooltipComponent, LegendComponent, MarkAreaComponent, CanvasRenderer])
 
@@ -94,14 +95,7 @@ export function PowerSpectrumChart() {
   return (
     <div className="relative">
       <div ref={chartRef} className="w-full h-72" />
-      {!spectrumData.hasData && (
-        <div className="absolute inset-0 flex items-center justify-center bg-bg-card/80">
-          <div className="text-center space-y-2">
-            <div className="text-4xl">🌈</div>
-            <div className="text-sm text-text-secondary">데이터 대기 중...</div>
-          </div>
-        </div>
-      )}
+      {!spectrumData.hasData && <EmptyState icon="🌈" label="스펙트럼" />}
       <div className="mt-2 flex justify-center gap-4 text-xs">
         <div className="flex items-center gap-1"><div className="w-3 h-3 bg-blue-500 rounded-full" /><span className="text-text-secondary">FP1 (Ch1)</span></div>
         <div className="flex items-center gap-1"><div className="w-3 h-3 bg-red-500 rounded-full" /><span className="text-text-secondary">FP2 (Ch2)</span></div>

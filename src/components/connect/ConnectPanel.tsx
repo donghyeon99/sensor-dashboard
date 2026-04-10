@@ -7,7 +7,7 @@ export function ConnectPanel() {
   const [open, setOpen] = useState(false)
   const [url, setUrl] = useState(DEFAULT_URL)
   const panelRef = useRef<HTMLDivElement>(null)
-  const { connected, isMock, connect, disconnect } = useSSEConnection()
+  const { connected, isMock, error, connect, disconnect } = useSSEConnection()
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -71,6 +71,11 @@ export function ConnectPanel() {
             disabled={connected}
             autoFocus
           />
+          {error && (
+            <div className="px-3 py-2 rounded-lg bg-coral/10 border border-coral/30 text-coral text-xs">
+              {error}
+            </div>
+          )}
           {connected ? (
             <button
               className="px-4 py-2 rounded-lg border-none text-xs font-semibold cursor-pointer transition-all duration-200 bg-coral text-bg-base hover:brightness-115"

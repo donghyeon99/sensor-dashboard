@@ -4,6 +4,7 @@ import { LineChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { useSensorDataStore } from '../../stores/sensorDataStore'
+import { EmptyState } from '../layout/EmptyState'
 
 echarts.use([LineChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
 
@@ -49,14 +50,7 @@ export function AccRawChart() {
   return (
     <div className="relative w-full h-64">
       <div ref={chartRef} className="w-full h-full" />
-      {accX.length === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center bg-bg-card/80">
-          <div className="text-center space-y-2">
-            <div className="text-4xl">📐</div>
-            <div className="text-sm text-text-secondary">ACC 데이터 대기 중...</div>
-          </div>
-        </div>
-      )}
+      {accX.length === 0 && <EmptyState icon="📐" label="ACC" />}
     </div>
   )
 }
