@@ -2,6 +2,8 @@
 
 BCI(Brain-Computer Interface) 헤드셋의 EEG/PPG/ACC 센서 데이터를 실시간으로 시각화하는 교육용 대시보드입니다.
 
+**[온라인 데모](https://sensor-dashboard-tawny-three.vercel.app/)** — 설치 없이 바로 접속 가능
+
 ---
 
 ## 1. LinkBand 연결하기
