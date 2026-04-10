@@ -1,11 +1,18 @@
 import { useState, useRef, useEffect } from 'react'
 import { useSSEConnection } from '../../hooks/useSSEConnection'
 
-const DEFAULT_URL = 'https://broadcast-server-506664317461.us-central1.run.app/subscribe?deviceId=ifBqqUHSkf1DZZe1DTaW9A=='
+const URL_HINT = 'https://broadcast-server-506664317461.us-central1.run.app/subscribe?deviceId=YOUR_DEVICE_ID'
+const STORAGE_KEY = 'sensor-dashboard:last-sse-url'
 
 export function ConnectPanel() {
   const [open, setOpen] = useState(false)
-  const [url, setUrl] = useState(DEFAULT_URL)
+  const [url, setUrl] = useState(() => {
+    try {
+      return localStorage.getItem(STORAGE_KEY) ?? ''
+    } catch {
+      return ''
+    }
+  })
   const panelRef = useRef<HTMLDivElement>(null)
   const { connected, isMock, error, connect, disconnect } = useSSEConnection()
 
@@ -22,13 +29,17 @@ export function ConnectPanel() {
   const handleConnect = () => {
     const trimmed = url.trim()
     if (!trimmed) return
+    try {
+      localStorage.setItem(STORAGE_KEY, trimmed)
+    } catch {
+      // ignore storage failures (private mode, quota, etc.)
+    }
     connect(trimmed)
     setOpen(false)
   }
 
   const handleDisconnect = () => {
     disconnect()
-    setUrl(DEFAULT_URL)
   }
 
   return (
@@ -64,7 +75,7 @@ export function ConnectPanel() {
           <input
             className="w-full px-3 py-2.5 rounded-lg border border-border-bright bg-bg-base text-text-primary text-xs font-mono outline-none transition-colors duration-200 focus:border-teal disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-text-muted"
             type="text"
-            placeholder="Paste SSE URL here..."
+            placeholder={URL_HINT}
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleConnect()}
