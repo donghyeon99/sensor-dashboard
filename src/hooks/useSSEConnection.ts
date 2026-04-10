@@ -18,7 +18,7 @@ export function useSSEConnection() {
     setError(null)
 
     try {
-      const es = new EventSource(sseUrl)
+      const es = new EventSource(sseUrl.replace(/\+/g, '%2B'))
       setEventSource(es)
 
       es.onopen = () => {
