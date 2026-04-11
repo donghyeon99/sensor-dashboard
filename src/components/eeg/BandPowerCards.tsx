@@ -1,32 +1,14 @@
 import { useMemo } from 'react'
 import { useSensorDataStore } from '../../stores/sensorDataStore'
 import { useConnectionStore } from '../../stores/connectionStore'
+import { computeEegPower, EEG_BANDS } from '../../lib/eegPower'
 
-const BANDS = [
-  { key: 'delta', name: 'Delta', range: '1-4Hz', color: 'bg-amber-600', min: 1, max: 4, desc: 'Deep sleep' },
-  { key: 'theta', name: 'Theta', range: '4-8Hz', color: 'bg-orange-500', min: 4, max: 8, desc: 'Drowsy/meditation' },
-  { key: 'alpha', name: 'Alpha', range: '8-13Hz', color: 'bg-green-500', min: 8, max: 13, desc: 'Relaxed/calm' },
-  { key: 'beta', name: 'Beta', range: '13-30Hz', color: 'bg-blue-500', min: 13, max: 30, desc: 'Focused/thinking' },
-  { key: 'gamma', name: 'Gamma', range: '30-45Hz', color: 'bg-purple-500', min: 30, max: 45, desc: 'High cognition' },
-]
-
-function computeBandPower(data: { value: number }[], sampleRate: number, fMin: number, fMax: number): { ch: number } {
-  if (data.length < 64) return { ch: 0 }
-  const N = Math.min(256, data.length)
-  const samples = data.slice(-N).map((p) => p.value)
-  let power = 0, count = 0
-  for (let freq = fMin; freq <= fMax; freq++) {
-    let realSum = 0, imagSum = 0
-    for (let n = 0; n < N; n++) {
-      const angle = (2 * Math.PI * freq * n) / sampleRate
-      realSum += samples[n] * Math.cos(angle)
-      imagSum -= samples[n] * Math.sin(angle)
-    }
-    const mag = Math.sqrt(realSum * realSum + imagSum * imagSum) / N
-    power += mag > 0 ? 20 * Math.log10(mag + 1) : 0
-    count++
-  }
-  return { ch: count > 0 ? power / count : 0 }
+const BAND_META: Record<typeof EEG_BANDS[number]['key'], { name: string; range: string; color: string; desc: string }> = {
+  delta: { name: 'Delta', range: '1-4Hz', color: 'bg-amber-600', desc: 'Deep sleep' },
+  theta: { name: 'Theta', range: '4-8Hz', color: 'bg-orange-500', desc: 'Drowsy/meditation' },
+  alpha: { name: 'Alpha', range: '8-13Hz', color: 'bg-green-500', desc: 'Relaxed/calm' },
+  beta: { name: 'Beta', range: '13-30Hz', color: 'bg-blue-500', desc: 'Focused/thinking' },
+  gamma: { name: 'Gamma', range: '30-45Hz', color: 'bg-purple-500', desc: 'High cognition' },
 }
 
 export function BandPowerCards() {
@@ -35,11 +17,18 @@ export function BandPowerCards() {
   const connected = useConnectionStore((s) => s.connected)
 
   const bandData = useMemo(() => {
-    if (fp1.length < 64) return null
-    const results = BANDS.map((band) => {
-      const ch1 = computeBandPower(fp1, 250, band.min, band.max)
-      const ch2 = computeBandPower(fp2, 250, band.min, band.max)
-      return { ...band, ch1: ch1.ch, ch2: ch2.ch, combined: (ch1.ch + ch2.ch) / 2 }
+    const computed = computeEegPower(fp1, fp2, 250)
+    if (!computed) return null
+    const results = EEG_BANDS.map((band) => {
+      const b = computed.bands[band.key]
+      const meta = BAND_META[band.key]
+      return {
+        key: band.key,
+        ...meta,
+        ch1: b.ch1Db,
+        ch2: b.ch2Db,
+        combined: (b.ch1Db + b.ch2Db) / 2,
+      }
     })
     const maxPower = Math.max(...results.map((r) => Math.max(r.ch1, r.ch2)), 1)
     return results.map((r) => ({

@@ -230,8 +230,15 @@ export const useSensorDataStore = create<SensorDataState>((set) => ({
         sdnn: p.sdnn as number | undefined,
         rmssd: p.rmssd as number | undefined,
         pnn50: p.pnn50 as number | undefined,
+        pnn20: p.pnn20 as number | undefined,
+        sdsd: p.sdsd as number | undefined,
+        avnn: p.avnn as number | undefined,
+        hrMax: p.hrMax as number | undefined,
+        hrMin: p.hrMin as number | undefined,
+        lfPower: (p.lfPower ?? p.lf_power) as number | undefined,
+        hfPower: (p.hfPower ?? p.hf_power) as number | undefined,
+        lfHfRatio: (p.lfHfRatio ?? p.lf_hf_ratio) as number | undefined,
         stressIndex: p.stressIndex as number | undefined,
-        lfHfRatio: p.lfHfRatio as number | undefined,
       }
 
       const hIdx = state.ppgHistoryIndex + 1

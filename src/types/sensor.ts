@@ -53,8 +53,15 @@ export interface PpgAnalysis {
   sdnn?: number
   rmssd?: number
   pnn50?: number
-  stressIndex?: number
+  pnn20?: number
+  sdsd?: number
+  avnn?: number
+  hrMax?: number
+  hrMin?: number
+  lfPower?: number
+  hfPower?: number
   lfHfRatio?: number
+  stressIndex?: number
 }
 
 // SSE message payload

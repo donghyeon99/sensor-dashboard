@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useSensorDataStore } from '../../stores/sensorDataStore'
 import { useConnectionStore } from '../../stores/connectionStore'
 import {
@@ -6,6 +7,7 @@ import {
   getThresholdTextClass,
   type IndexThreshold,
 } from '../../lib/indexThresholds'
+import { computeEegPower } from '../../lib/eegPower'
 import { IndexTooltip } from './IndexTooltip'
 
 interface IndexDef {
@@ -54,7 +56,14 @@ function IndexCard({ idx, value }: { idx: IndexDef; value: number | undefined })
 
 export function IndexCards() {
   const eegAnalysis = useSensorDataStore((s) => s.eegAnalysis)
+  const fp1 = useSensorDataStore((s) => s.eegFp1)
+  const fp2 = useSensorDataStore((s) => s.eegFp2)
   const connected = useConnectionStore((s) => s.connected)
+
+  const computedTotalPower = useMemo(() => {
+    const result = computeEegPower(fp1, fp2, 250)
+    return result?.totalPowerLinear
+  }, [fp1, fp2])
 
   if (!connected || !eegAnalysis) {
     return (
@@ -75,7 +84,7 @@ export function IndexCards() {
       case 'emotionalStability': return eegAnalysis.emotionalStability
       case 'hemisphericBalance': return eegAnalysis.hemisphericBalance
       case 'cognitiveLoad': return eegAnalysis.cognitiveLoad
-      case 'totalPower': return eegAnalysis.totalPower
+      case 'totalPower': return computedTotalPower
       default: return undefined
     }
   }
