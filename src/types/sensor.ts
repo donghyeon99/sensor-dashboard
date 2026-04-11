@@ -37,6 +37,9 @@ export interface EegAnalysis {
   stressIndex: number
   cognitiveLoad: number
   emotionalBalance: number
+  emotionalStability: number
+  hemisphericBalance: number
+  attentionLevel?: number
   meditationLevel: number
   totalPower: number
   signalQuality?: number

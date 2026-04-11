@@ -15,12 +15,13 @@ interface IndexDef {
 }
 
 const indices: IndexDef[] = [
-  { threshold: eegIndexThresholds.relaxationIndex, dotColor: 'bg-green-500', basis: 'α / (α + β)' },
-  { threshold: eegIndexThresholds.hemisphericBalance, dotColor: 'bg-pink-500', basis: '(αL − αR) / (αL + αR)' },
-  { threshold: eegIndexThresholds.focusIndex, dotColor: 'bg-blue-500', basis: 'β / (α + θ)' },
-  { threshold: eegIndexThresholds.stressIndex, dotColor: 'bg-red-500', basis: '(β + γ) / (α + θ)' },
-  { threshold: eegIndexThresholds.totalPower, dotColor: 'bg-purple-500', basis: 'Σ band powers' },
-  { threshold: eegIndexThresholds.cognitiveLoad, dotColor: 'bg-yellow-500', basis: 'θ / α' },
+  { threshold: eegIndexThresholds.relaxationIndex, dotColor: 'bg-red-500', basis: 'α / (α + β)' },
+  { threshold: eegIndexThresholds.emotionalStability, dotColor: 'bg-pink-500', basis: '(α + θ) / γ' },
+  { threshold: eegIndexThresholds.focusIndex, dotColor: 'bg-yellow-500', basis: 'β / (α + θ)' },
+  { threshold: eegIndexThresholds.stressIndex, dotColor: 'bg-orange-500', basis: '(β + γ) / (α + θ)' },
+  { threshold: eegIndexThresholds.totalPower, dotColor: 'bg-green-500', basis: 'Σ band powers' },
+  { threshold: eegIndexThresholds.cognitiveLoad, dotColor: 'bg-blue-500', basis: 'θ / α' },
+  { threshold: eegIndexThresholds.hemisphericBalance, dotColor: 'bg-purple-500', basis: '(αL − αR) / (αL + αR)' },
 ]
 
 function IndexCard({ idx, value }: { idx: IndexDef; value: number | undefined }) {
@@ -71,7 +72,8 @@ export function IndexCards() {
       case 'focusIndex': return eegAnalysis.focusIndex
       case 'relaxationIndex': return eegAnalysis.relaxationIndex
       case 'stressIndex': return eegAnalysis.stressIndex
-      case 'hemisphericBalance': return eegAnalysis.emotionalBalance
+      case 'emotionalStability': return eegAnalysis.emotionalStability
+      case 'hemisphericBalance': return eegAnalysis.hemisphericBalance
       case 'cognitiveLoad': return eegAnalysis.cognitiveLoad
       case 'totalPower': return eegAnalysis.totalPower
       default: return undefined
@@ -85,7 +87,7 @@ export function IndexCards() {
           <IndexCard key={idx.threshold.key} idx={idx} value={valueFor(idx.threshold.key)} />
         ))}
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {indices.slice(4).map((idx) => (
           <IndexCard key={idx.threshold.key} idx={idx} value={valueFor(idx.threshold.key)} />
         ))}
