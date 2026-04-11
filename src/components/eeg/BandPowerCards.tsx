@@ -3,11 +3,11 @@ import { useSensorDataStore } from '../../stores/sensorDataStore'
 import { useConnectionStore } from '../../stores/connectionStore'
 
 const BANDS = [
-  { key: 'delta', name: '델타파', range: '1-4Hz', color: 'bg-amber-600', min: 1, max: 4, desc: '깊은 수면' },
-  { key: 'theta', name: '세타파', range: '4-8Hz', color: 'bg-orange-500', min: 4, max: 8, desc: '졸음/명상' },
-  { key: 'alpha', name: '알파파', range: '8-13Hz', color: 'bg-green-500', min: 8, max: 13, desc: '이완/안정' },
-  { key: 'beta', name: '베타파', range: '13-30Hz', color: 'bg-blue-500', min: 13, max: 30, desc: '집중/사고' },
-  { key: 'gamma', name: '감마파', range: '30-45Hz', color: 'bg-purple-500', min: 30, max: 45, desc: '고도 인지' },
+  { key: 'delta', name: 'Delta', range: '1-4Hz', color: 'bg-amber-600', min: 1, max: 4, desc: 'Deep sleep' },
+  { key: 'theta', name: 'Theta', range: '4-8Hz', color: 'bg-orange-500', min: 4, max: 8, desc: 'Drowsy/meditation' },
+  { key: 'alpha', name: 'Alpha', range: '8-13Hz', color: 'bg-green-500', min: 8, max: 13, desc: 'Relaxed/calm' },
+  { key: 'beta', name: 'Beta', range: '13-30Hz', color: 'bg-blue-500', min: 13, max: 30, desc: 'Focused/thinking' },
+  { key: 'gamma', name: 'Gamma', range: '30-45Hz', color: 'bg-purple-500', min: 30, max: 45, desc: 'High cognition' },
 ]
 
 function computeBandPower(data: { value: number }[], sampleRate: number, fMin: number, fMax: number): { ch: number } {
@@ -55,7 +55,7 @@ export function BandPowerCards() {
       <div className="text-center py-8">
         <div className="text-4xl mb-2">🧠</div>
         <div className="text-sm text-text-secondary">
-          {connected ? '밴드 파워 데이터 수신 대기 중...' : 'Connect 버튼을 눌러 연결해주세요'}
+          {connected ? 'Waiting for band power data...' : 'Press the Connect button to connect'}
         </div>
       </div>
     )
@@ -72,7 +72,7 @@ export function BandPowerCards() {
 
           {/* Combined power bar */}
           <div className="mb-2">
-            <div className="text-[10px] text-text-muted mb-1">전체</div>
+            <div className="text-[10px] text-text-muted mb-1">Total</div>
             <div className="h-8 bg-bg-base rounded relative overflow-hidden">
               <div className={`absolute bottom-0 left-0 right-0 ${band.color} opacity-80 rounded transition-all duration-300`} style={{ height: `${band.normalizedCombined}%` }} />
               <div className="absolute inset-0 flex items-center justify-center">
@@ -105,7 +105,7 @@ export function BandPowerCards() {
 
           <div className="text-sm font-semibold text-text-primary">{band.name}</div>
           <div className="text-[10px] text-text-muted">{band.range} · {band.desc}</div>
-          <div className="text-[10px] text-cyan-300 mt-1">좌우 차이: {Math.abs(band.ch1 - band.ch2).toFixed(1)} dB</div>
+          <div className="text-[10px] text-cyan-300 mt-1">L/R diff: {Math.abs(band.ch1 - band.ch2).toFixed(1)} dB</div>
         </div>
       ))}
     </div>

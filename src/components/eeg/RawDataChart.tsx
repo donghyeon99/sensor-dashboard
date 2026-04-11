@@ -28,7 +28,7 @@ export function RawDataChart({ channel }: Props) {
       tooltip: { trigger: 'axis', formatter: (params: any) => `${label}: ${params[0]?.value?.[1]?.toFixed(2)} μV` },
       grid: { left: '12%', right: '5%', bottom: '8%', top: '8%' },
       xAxis: { type: 'value', show: false },
-      yAxis: { type: 'value', name: 'μV', nameLocation: 'middle', nameGap: 50, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } }, axisLabel: { color: '#8888aa', fontSize: 10 } },
+      yAxis: { type: 'value', name: 'μV', nameLocation: 'middle', nameGap: 50, min: -150, max: 150, interval: 50, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } }, axisLabel: { color: '#8888aa', fontSize: 10 } },
       series: [{ type: 'line', data: [], lineStyle: { color, width: 1.5 }, symbol: 'none', animation: false, sampling: 'lttb' }],
     })
     const handleResize = () => chartInstance.current?.resize()

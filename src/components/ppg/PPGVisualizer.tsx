@@ -15,23 +15,23 @@ export function PPGVisualizer() {
   return (
     <div className="space-y-6">
       <div className="bg-bg-card border border-border rounded-2xl p-6">
-        <h2 className="text-xl font-bold text-text-primary mb-3">❤️ PPG 맥파 분석</h2>
+        <h2 className="text-xl font-bold text-text-primary mb-3">❤️ PPG Pulse Analysis</h2>
         <p className="text-text-secondary text-sm leading-relaxed mb-3">
-          PPG(광용적맥파)는 빛을 이용해 혈류 변화를 측정하는 방식입니다.
-          LinkBand는 이마의 <strong className="text-purple">IR(적외선)</strong>과 <strong className="text-coral">Red(적색)</strong> 두 광원으로 심박수와 산소포화도를 측정합니다.
+          PPG (photoplethysmography) uses light to measure changes in blood flow.
+          LinkBand measures heart rate and oxygen saturation using two light sources on the forehead: <strong className="text-purple">IR (infrared)</strong> and <strong className="text-coral">Red</strong>.
         </p>
         <div className="flex flex-wrap gap-2">
-          <InfoBadge text="2광원 (IR, Red)" />
-          <InfoBadge text="50Hz 샘플링" />
+          <InfoBadge text="2 light sources (IR, Red)" />
+          <InfoBadge text="50Hz sampling" />
           <InfoBadge text="BPM + SpO2 + HRV" />
         </div>
       </div>
 
       {/* PPG Raw */}
       <div className="bg-bg-card border border-border rounded-2xl p-6">
-        <h3 className="text-base font-semibold text-text-primary mb-1">PPG 원시 신호</h3>
+        <h3 className="text-base font-semibold text-text-primary mb-1">PPG Raw Signal</h3>
         <p className="text-xs text-text-muted mb-4">
-          IR(적외선) — 혈관 깊숙한 혈류 감지 | Red(적색) — 표면 혈류 감지. 두 신호의 비율로 산소포화도를 계산
+          IR (infrared) — detects deep vascular blood flow | Red — detects surface blood flow. Oxygen saturation is computed from the ratio of the two signals
         </p>
         <PPGRawChart />
       </div>
@@ -39,16 +39,16 @@ export function PPGVisualizer() {
       {/* BPM | SpO2 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-bg-card border border-border rounded-2xl p-6">
-          <h3 className="text-base font-semibold text-text-primary mb-1">💓 심박수 (BPM) 추이</h3>
+          <h3 className="text-base font-semibold text-text-primary mb-1">💓 Heart Rate (BPM) Trend</h3>
           <p className="text-xs text-text-muted mb-4">
-            BPM = Beats Per Minute (분당 심박 수). 정상 범위: 60~100 BPM
+            BPM = Beats Per Minute. Normal range: 60~100 BPM
           </p>
           <BpmChart />
         </div>
         <div className="bg-bg-card border border-border rounded-2xl p-6">
-          <h3 className="text-base font-semibold text-text-primary mb-1">🫁 산소포화도 (SpO2) 추이</h3>
+          <h3 className="text-base font-semibold text-text-primary mb-1">🫁 Oxygen Saturation (SpO2) Trend</h3>
           <p className="text-xs text-text-muted mb-4">
-            SpO2 = 혈중 산소 농도 (%). 정상: 95% 이상. 95% 미만이면 저산소 상태
+            SpO2 = blood oxygen concentration (%). Normal: 95% or higher. Below 95% indicates low oxygen
           </p>
           <SpO2Chart />
         </div>
@@ -56,10 +56,10 @@ export function PPGVisualizer() {
 
       {/* Metrics + HRV */}
       <div className="bg-bg-card border border-border rounded-2xl p-6">
-        <h3 className="text-base font-semibold text-text-primary mb-1">❤️ 심혈관 지표</h3>
+        <h3 className="text-base font-semibold text-text-primary mb-1">❤️ Cardiovascular Metrics</h3>
         <p className="text-xs text-text-muted mb-4">
-          실시간 심박수, 산소포화도 및 HRV(심박변이도) 요약.
-          HRV는 심장 박동 간격의 변동성으로, 높을수록 자율신경계가 건강한 상태
+          Real-time heart rate, oxygen saturation, and HRV (heart rate variability) summary.
+          HRV is the variability between heartbeats — higher values indicate a healthier autonomic nervous system
         </p>
         <PPGMetricsCards />
       </div>

@@ -147,28 +147,42 @@ npm run dev
 - **샘플링 레이트**: 250Hz
 - **패킷당 샘플 수**: ~200개
 
-### 4-3. EEG Analysis (뇌파 분석)
+### 4-3. EEG Analysis (뇌파 분석 지수)
 
-| 필드 | 설명 | 범위 |
-|------|------|------|
-| `attention` | 집중도 (Beta파 기반) | 0 ~ 1 |
-| `focusIndex` | 초점 지수 (SMR + Mid-Beta) | 0 ~ 1 |
-| `relaxationIndex` | 이완 지수 (Alpha파 기반) | 0 ~ 1 |
-| `stressIndex` | 스트레스 (High-Beta 기반) | 0 ~ 1 |
-| `cognitiveLoad` | 인지 부하 (Theta/Alpha 비율) | 0 ~ 1 |
-| `emotionalBalance` | 감정 균형 (FP1/FP2 비대칭) | 0 ~ 1 |
-| `meditationLevel` | 명상 수준 (Theta + Alpha) | 0 ~ 1 |
-| `totalPower` | 전체 뇌파 파워 | dB |
+대시보드 카드에 hover하면 각 지수의 공식·정상 범위·해석이 툴팁으로 표시됩니다.
 
-### 4-4. PPG Analysis (맥파 분석)
+| 지수 | 공식 | 정상 범위 | 단위 | 참고 |
+|------|------|-----------|------|------|
+| **집중력 (Focus)** | β / (α + θ) | 1.8 – 2.4 | ratio | Klimesch 1999 |
+| **이완도 (Relaxation)** | α / (α + β) | 0.18 – 0.22 | ratio | Bazanova & Vernon 2014 |
+| **스트레스 (Stress)** | (β + γ) / (α + θ) | 3.0 – 4.0 | ratio | Ahn et al. 2019 |
+| **좌우뇌 균형 (Hemispheric Balance)** | (αL − αR) / (αL + αR) | −0.1 – 0.1 | ratio | Davidson 2004 |
+| **인지 부하 (Cognitive Load)** | θ / α | 0.3 – 0.8 | ratio | Gevins & Smith 2003 |
+| **정서 안정성 (Emotional Stability)** | (α + θ) / γ | 0.4 – 0.8 | ratio | Knyazev 2007 |
+| **신경 활동 (Total Power)** | Σ band powers | 850 – 1150 | μV² | Klimesch 1999 |
 
-| 필드 | 설명 | 단위 |
-|------|------|------|
-| `bpm` | 심박수 | BPM |
-| `spo2` | 산소포화도 (없을 수 있음) | % |
-| `sdnn` | HRV 표준편차 | ms |
-| `rmssd` | HRV RMSSD | ms |
-| `stressIndex` | PPG 기반 스트레스 지수 | float |
+> EEG 원시 데이터는 클라이언트에서 60Hz Notch + 1Hz HPF + 45Hz LPF (Butterworth) 필터링 후 분석됩니다. 처음 1초(250 샘플)는 필터 transient 구간으로 0으로 출력됩니다.
+
+### 4-4. PPG / HRV Analysis (맥파 / 심박변이도 분석)
+
+| 지수 | 공식 / 방법 | 정상 범위 | 단위 |
+|------|-------------|-----------|------|
+| **BPM** | PPG peak interval 분석 | 60 – 100 | beats/min |
+| **SpO2** | Red/IR ratio (Beer–Lambert) | 95 – 100 | % |
+| **SDNN** | √(Σ(RRᵢ − R̄R)² / (N−1)) | 30 – 100 | ms |
+| **RMSSD** | √(Σ(RRᵢ₊₁ − RRᵢ)² / (N−1)) | 20 – 50 | ms |
+| **PNN50** | count(\|ΔRR\| > 50ms) / N × 100 | 10 – 30 | % |
+| **PNN20** | count(\|ΔRR\| > 20ms) / N × 100 | 20 – 60 | % |
+| **AVNN** | Σ(RRᵢ) / N | 600 – 1000 | ms |
+| **LF Power** | PSD integral 0.04–0.15 Hz | 200 – 1200 | ms² |
+| **HF Power** | PSD integral 0.15–0.4 Hz | 80 – 4000 | ms² |
+| **LF/HF Ratio** | LF / HF | 1.5 – 2.5 (이상적) | ratio |
+| **Stress (PPG)** | 0.4·SDNNn + 0.4·RMSSDn + 0.2·HRstress | 0.30 – 0.70 | normalized |
+| **SDSD** | √(Σ((ΔRR) − mean_Δ)² / (N−1)) | 15 – 40 | ms |
+| **HR Max** | 2분 이동 윈도우 max(BPM) | 80 – 150 | bpm |
+| **HR Min** | 2분 이동 윈도우 min(BPM) | 50 – 80 | bpm |
+
+> 출처: Task Force of ESC/NASPE 1996, Shaffer & Ginsberg 2017, AHA Guidelines.
 
 ### 4-5. Accelerometer (가속도)
 
@@ -180,14 +194,17 @@ npm run dev
 - **샘플링 레이트**: 25Hz
 - **패킷당 샘플 수**: ~30개
 
-### 4-6. ACC Analysis (가속도 분석)
+### 4-6. ACC Analysis (가속도 분석 지수)
 
-| 필드 | 설명 |
-|------|------|
-| `activityState` | 활동 상태 (stationary, moving 등) |
-| `intensity` | 움직임 강도 |
-| `stability` | 안정도 (%) |
-| `avgMovement` | 평균 움직임 |
+| 지수 | 공식 / 방법 | 정상 범위 | 단위 |
+|------|-------------|-----------|------|
+| **Activity State** | \|√(x²+y²+z²) − 1g\| 임계값 분류 | Stationary / Sitting / Walking / Running | classification |
+| **안정성 (Stability)** | 100 − (variability × norm) | 70 – 100 | % |
+| **강도 (Intensity)** | mean magnitude / max × 100 | 0 – 100 (활동별) | % |
+| **균형 (Balance)** | 100 − \|X% − Y%\| × 200 | 60 – 100 | % |
+| **Avg Movement** | mean(\|\|a\|\| − 1g) | 0 – 0.6+ | g |
+| **Std Movement** | stddev of magnitude | 0 – 0.6+ | g |
+| **Max Movement** | max(\|\|a\|\| − 1g) | 0 – 2+ | g |
 
 ---
 

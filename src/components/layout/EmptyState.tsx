@@ -13,11 +13,11 @@ export function EmptyState({ icon, label }: Props) {
       <div className="text-center space-y-2">
         <div className="text-4xl">{icon}</div>
         <div className="text-sm text-text-secondary">
-          {connected ? `${label} 데이터 수신 대기 중...` : 'Connect 버튼을 눌러 연결해주세요'}
+          {connected ? `Waiting for ${label} data...` : 'Press the Connect button to connect'}
         </div>
         {!connected && (
           <div className="text-xs text-text-muted">
-            헤더의 Connect → SSE URL 입력 → Connect
+            Header Connect → enter SSE URL → Connect
           </div>
         )}
       </div>

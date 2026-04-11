@@ -39,12 +39,12 @@ export function useSSEConnection() {
       es.onerror = () => {
         if (es.readyState === EventSource.CLOSED) {
           setConnected(false)
-          setError('연결이 끊어졌습니다. URL을 확인해주세요.')
+          setError('Connection lost. Please check the URL.')
         }
       }
     } catch (err) {
       setConnected(false)
-      setError('잘못된 URL입니다. SSE URL을 확인해주세요.')
+      setError('Invalid URL. Please check the SSE URL.')
     }
   }, [resetData, setUrl, setIsMock, setError, setEventSource, setConnected, updateFromPayload])
 

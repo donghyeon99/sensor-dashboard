@@ -56,7 +56,7 @@ export function PowerSpectrumChart() {
       legend: { data: ['FP1 (Ch1)', 'FP2 (Ch2)'], top: 5, textStyle: { color: '#8888aa', fontSize: 11 } },
       grid: { left: '10%', right: '5%', bottom: '15%', top: '15%' },
       xAxis: { type: 'value', name: 'Hz', nameLocation: 'middle', nameGap: 25, min: 1, max: 45, axisLabel: { color: '#8888aa', fontSize: 10 }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } } },
-      yAxis: { type: 'value', name: 'dB', nameLocation: 'middle', nameGap: 40, min: 0, axisLabel: { color: '#8888aa', fontSize: 10 }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } } },
+      yAxis: { type: 'value', name: 'dB', nameLocation: 'middle', nameGap: 40, min: 0, max: 60, interval: 10, axisLabel: { color: '#8888aa', fontSize: 10 }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } } },
       series: [
         {
           name: 'FP1 (Ch1)', type: 'line', data: [], symbol: 'none', smooth: true, animation: false,
@@ -95,7 +95,7 @@ export function PowerSpectrumChart() {
   return (
     <div className="relative">
       <div ref={chartRef} className="w-full h-72" />
-      {!spectrumData.hasData && <EmptyState icon="🌈" label="스펙트럼" />}
+      {!spectrumData.hasData && <EmptyState icon="🌈" label="Spectrum" />}
       <div className="mt-2 flex justify-center gap-4 text-xs">
         <div className="flex items-center gap-1"><div className="w-3 h-3 bg-blue-500 rounded-full" /><span className="text-text-secondary">FP1 (Ch1)</span></div>
         <div className="flex items-center gap-1"><div className="w-3 h-3 bg-red-500 rounded-full" /><span className="text-text-secondary">FP2 (Ch2)</span></div>

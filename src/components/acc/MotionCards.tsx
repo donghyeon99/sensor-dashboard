@@ -1,6 +1,12 @@
 import { useMemo } from 'react'
 import { useSensorDataStore } from '../../stores/sensorDataStore'
 import { useConnectionStore } from '../../stores/connectionStore'
+import {
+  accIndexThresholds,
+  classifyIndex,
+  getThresholdTextClass,
+} from '../../lib/indexThresholds'
+import { IndexTooltip } from '../eeg/IndexTooltip'
 
 export function MotionCards() {
   const accX = useSensorDataStore((s) => s.accX)
@@ -20,8 +26,8 @@ export function MotionCards() {
     return {
       lastX, lastY, lastZ, lastMag,
       activityState: accAnalysis?.activityState ?? 'unknown',
-      intensity: accAnalysis?.intensity ?? 0,
-      stability: accAnalysis?.stability ?? 0,
+      intensity: accAnalysis?.intensity,
+      stability: accAnalysis?.stability,
       avgMovement: accAnalysis?.avgMovement ?? 0,
     }
   }, [accX, accY, accZ, accMagnitude, accAnalysis])
@@ -31,29 +37,28 @@ export function MotionCards() {
       <div className="text-center py-8">
         <div className="text-4xl mb-2">📐</div>
         <div className="text-sm text-text-secondary">
-          {connected ? '모션 데이터 수신 대기 중...' : 'Connect 버튼을 눌러 연결해주세요'}
+          {connected ? 'Waiting for motion data...' : 'Press the Connect button to connect'}
         </div>
       </div>
     )
   }
 
-  const cards = [
-    { label: 'X축', value: metrics.lastX.toFixed(3), unit: 'g', color: 'bg-red-500' },
-    { label: 'Y축', value: metrics.lastY.toFixed(3), unit: 'g', color: 'bg-green-500' },
-    { label: 'Z축', value: metrics.lastZ.toFixed(3), unit: 'g', color: 'bg-blue-500' },
+  const stabilityLevel = metrics.stability != null ? classifyIndex(metrics.stability, accIndexThresholds.stability) : null
+  const stabilityColor = stabilityLevel ? getThresholdTextClass(stabilityLevel.color) : 'text-text-muted'
+
+  const intensityLevel = metrics.intensity != null ? classifyIndex(metrics.intensity, accIndexThresholds.intensity) : null
+  const intensityColor = intensityLevel ? getThresholdTextClass(intensityLevel.color) : 'text-text-muted'
+
+  const rawCards = [
+    { label: 'X-axis', value: metrics.lastX.toFixed(3), unit: 'g', color: 'bg-red-500' },
+    { label: 'Y-axis', value: metrics.lastY.toFixed(3), unit: 'g', color: 'bg-green-500' },
+    { label: 'Z-axis', value: metrics.lastZ.toFixed(3), unit: 'g', color: 'bg-blue-500' },
     { label: 'Magnitude', value: metrics.lastMag.toFixed(3), unit: 'g', color: 'bg-yellow-500' },
-    {
-      label: '활동 상태',
-      value: metrics.activityState,
-      unit: '',
-      color: metrics.activityState === 'stationary' ? 'bg-teal' : 'bg-coral',
-    },
-    { label: '안정도', value: `${metrics.stability}`, unit: '%', color: 'bg-purple-500' },
   ]
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-      {cards.map((card) => (
+      {rawCards.map((card) => (
         <div key={card.label} className="bg-bg-elevated border border-border rounded-lg p-4 hover:bg-bg-hover transition-colors">
           <div className="flex items-center gap-2 mb-2">
             <div className={`w-3 h-3 rounded-full ${card.color}`} />
@@ -65,6 +70,42 @@ export function MotionCards() {
           </div>
         </div>
       ))}
+
+      <div className="bg-bg-elevated border border-border rounded-lg p-4 hover:bg-bg-hover transition-colors">
+        <div className="flex items-center gap-2 mb-2">
+          <div className={`w-3 h-3 rounded-full ${metrics.activityState === 'stationary' ? 'bg-teal' : 'bg-coral'}`} />
+          <span className="text-sm font-medium text-text-secondary">Activity State</span>
+        </div>
+        <div className="text-2xl font-bold text-text-primary font-mono">
+          {metrics.activityState}
+        </div>
+      </div>
+
+      <div className="group relative bg-bg-elevated border border-border rounded-lg p-4 hover:bg-bg-hover transition-colors">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-3 h-3 rounded-full bg-purple-500" />
+          <span className="text-sm font-medium text-text-secondary">{accIndexThresholds.stability.displayName}</span>
+        </div>
+        <div className="text-2xl font-bold text-text-primary font-mono">
+          {metrics.stability != null ? metrics.stability.toFixed(0) : '--'}
+          <span className="text-sm text-text-muted ml-1">{accIndexThresholds.stability.unit}</span>
+        </div>
+        <div className={`text-xs font-medium mt-1 ${stabilityColor}`}>{stabilityLevel ? stabilityLevel.label : 'No data'}</div>
+        <IndexTooltip threshold={accIndexThresholds.stability} />
+      </div>
+
+      <div className="group relative bg-bg-elevated border border-border rounded-lg p-4 hover:bg-bg-hover transition-colors">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-3 h-3 rounded-full bg-orange-500" />
+          <span className="text-sm font-medium text-text-secondary">{accIndexThresholds.intensity.displayName}</span>
+        </div>
+        <div className="text-2xl font-bold text-text-primary font-mono">
+          {metrics.intensity != null ? metrics.intensity.toFixed(0) : '--'}
+          <span className="text-sm text-text-muted ml-1">{accIndexThresholds.intensity.unit}</span>
+        </div>
+        <div className={`text-xs font-medium mt-1 ${intensityColor}`}>{intensityLevel ? intensityLevel.label : 'No data'}</div>
+        <IndexTooltip threshold={accIndexThresholds.intensity} />
+      </div>
     </div>
   )
 }
