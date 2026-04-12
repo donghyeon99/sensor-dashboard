@@ -12,7 +12,7 @@ export function IndexTooltip({ threshold }: Props) {
   }
   const unitSuffix = threshold.unit ? ` ${threshold.unit}` : ''
   return (
-    <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-80 p-3 rounded-lg bg-bg-card border border-border-bright opacity-0 group-hover:opacity-100 transition-opacity z-50 shadow-xl text-left">
+    <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-80 p-3 rounded-lg bg-bg-elevated border border-border-bright opacity-0 group-hover:opacity-100 transition-opacity z-50 shadow-xl text-left">
       <div className="text-sm font-bold text-text-primary mb-1">{threshold.displayName}</div>
       {threshold.description && (
         <p className="text-[11px] text-text-secondary leading-relaxed mb-2">{threshold.description}</p>

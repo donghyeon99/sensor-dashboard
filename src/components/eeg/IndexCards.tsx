@@ -42,12 +42,10 @@ export function IndexCards() {
     const level = hasValue ? classifyIndex(value!, threshold) : null
     const colorClass = level ? getThresholdTextClass(level.color) : 'text-metric-muted'
     const dotClass = level ? getThresholdDotClass(level.color) : 'bg-gray-500'
-    const opacityClass = hasValue ? 'opacity-100' : 'opacity-60'
-
     return (
       <div
         key={threshold.key}
-        className={`group relative bg-metric-bg border border-metric-border rounded-lg p-4 hover:bg-metric-hover transition-colors ${opacityClass}`}
+        className="group relative bg-metric-bg border border-metric-border rounded-lg p-4 hover:bg-metric-hover transition-colors"
       >
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">

@@ -69,7 +69,7 @@ export function MetricCard({
           {level ? level.label : 'No data'}
         </div>
         {(description ?? threshold.description) && (
-          <div className="text-[11px] text-text-muted leading-relaxed opacity-70 group-hover:opacity-100 transition-opacity">
+          <div className="text-[11px] text-text-muted leading-relaxed">
             {description ?? threshold.description}
           </div>
         )}
