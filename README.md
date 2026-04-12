@@ -358,35 +358,103 @@ sensor-dashboard/
 
 ---
 
-## 8. 학생 가이드: 로봇 제어
+## 8. 학생 가이드: 로봇 제어 (Python)
 
-별도 Python 백엔드를 실행하면 WebSocket으로 센서 데이터에 접근하여 학생 프로젝트에 활용할 수 있습니다.
+별도 Python 백엔드를 실행하면 센서 데이터를 실시간으로 받아 로봇 제어 등 학생 프로젝트에 활용할 수 있습니다.
 
-### 8-1. 백엔드 실행 (선택 사항)
+### 8-1. 구조
+
+```
+backend/
+├── server.py              # SSE → WebSocket 중계 서버 (수정 불필요)
+├── sensor_data.py         # 센서 데이터 타입 정의 (수정 불필요)
+├── robot_controller.py    # ★ 학생이 코드를 작성하는 파일
+├── example_controller.py  # 작성 예시
+└── requirements.txt       # Python 의존성
+```
+
+### 8-2. 데이터 흐름
+
+```
+Cloud Broadcast Server (SSE)
+    ↓
+server.py (SSE 수신 → 파싱)
+    ↓
+robot_controller.py의 on_sensor_data() 자동 호출
+    ↓
+학생이 센서 데이터로 로봇 제어 로직 작성
+```
+
+### 8-3. 백엔드 실행
 
 ```bash
 cd backend
-python3 -m venv venv
-source venv/bin/activate
 pip install -r requirements.txt
-python3 server.py
+python server.py
 ```
 
-### 8-2. 학생 코드 예시
+> **Windows 사용자**: `python3` 대신 `python`을 사용하세요.
+
+서버가 시작되면 SSE에 자동 연결하여 센서 데이터를 수신합니다. `http://localhost:8000`에서 WebSocket과 REST API도 제공합니다.
+
+### 8-4. Device ID 설정
+
+`server.py`의 `DEVICE_ID`를 본인 LinkBand 세션의 Device ID로 변경해야 합니다:
 
 ```python
-# robot_controller.py
-from sensor_data import from_dict, SensorData
+# server.py 25~26번째 줄
+SSE_URL = "https://broadcast-server-506664317461.us-central1.run.app/subscribe"
+DEVICE_ID = "여기에_본인_Device_ID_입력"
+```
 
+Device ID는 [sdk.linkband.store](https://sdk.linkband.store)에서 연결 후 Developer API 섹션의 cURL URL에서 확인할 수 있습니다.
+
+### 8-5. 학생 코드 작성
+
+`robot_controller.py`의 `on_sensor_data()` 함수 안에 코드를 작성합니다:
+
+```python
 def on_sensor_data(data: SensorData):
+    # EEG 분석 데이터
     if data.eeg_analysis:
-        attention = data.eeg_analysis.attention
-        if attention > 0.6:
-            print(f"집중도 {attention:.2f} → 로봇 전진!")
+        eeg = data.eeg_analysis
+        print(f"[EEG] Focus: {eeg.focus_index:.2f} | "
+              f"Stress: {eeg.stress_index:.2f} | "
+              f"Relax: {eeg.relaxation_index:.2f}")
 
+        # 집중도가 높으면 앞으로 이동
+        if eeg.focus_index > 0.7:
+            move_forward()
+        # 스트레스가 높으면 정지
+        elif eeg.stress_index > 0.5:
+            stop()
+
+    # PPG 분석 데이터
     if data.ppg_analysis:
-        bpm = data.ppg_analysis.bpm
-        print(f"심박수: {bpm:.0f} BPM")
+        ppg = data.ppg_analysis
+        print(f"[PPG] BPM: {ppg.bpm:.0f}")
+```
+
+### 8-6. 사용 가능한 센서 데이터
+
+| 데이터 | 필드 | 설명 |
+|--------|------|------|
+| `data.eeg_analysis.attention` | 0.0 ~ 1.0 | 집중도 |
+| `data.eeg_analysis.focus_index` | float | 포커스 지수 |
+| `data.eeg_analysis.relaxation_index` | float | 이완 지수 |
+| `data.eeg_analysis.stress_index` | float | 스트레스 지수 |
+| `data.eeg_analysis.cognitive_load` | float | 인지 부하 |
+| `data.eeg_analysis.emotional_balance` | float | 감정 균형 |
+| `data.eeg_analysis.total_power` | float | 전체 뇌파 파워 |
+| `data.ppg_analysis.bpm` | float | 심박수 (BPM) |
+| `data.ppg_analysis.spo2` | float or None | 산소포화도 (%) |
+
+### 8-7. REST API (선택)
+
+WebSocket 대신 HTTP 폴링으로도 데이터를 가져올 수 있습니다:
+
+```bash
+curl http://localhost:8000/api/latest
 ```
 
 자세한 프로젝트 아이디어는 `docs/PROJECT_IDEAS.md`를 참고하세요.

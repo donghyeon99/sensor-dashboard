@@ -23,7 +23,7 @@ from sensor_data import SensorData, from_dict as sensor_from_dict
 
 # ── 설정 ──
 SSE_URL = "https://broadcast-server-506664317461.us-central1.run.app/subscribe"
-DEVICE_ID = "YQqqfXyPphgeUZ8BqSYDww=="
+DEVICE_ID = "6/h/SYZoOP5ql9AZrhY0TQ=="
 
 # ── 상태 ──
 connected_clients: Set[WebSocket] = set()
@@ -40,13 +40,13 @@ async def sse_collector():
     """SSE 스트림에서 데이터를 수집하고 파싱하여 WebSocket 클라이언트에 브로드캐스트"""
     while True:
         try:
-            async with httpx.AsyncClient(timeout=None) as client:
-                async with client.stream(
-                    "GET", SSE_URL, params={"deviceId": DEVICE_ID}
-                ) as response:
+            full_url = f"{SSE_URL}?deviceId={DEVICE_ID.replace('+', '%2B')}"
+            print(f"[*] SSE 연결 시도... ({full_url})", flush=True)
+            async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, read=None)) as client:
+                async with client.stream("GET", full_url) as response:
                     latest_data["connected"] = True
                     await broadcast({"type": "status", "connected": True})
-                    print(f"✅ SSE 연결됨 (device: {DEVICE_ID})")
+                    print(f"[OK] SSE 연결됨 (device: {DEVICE_ID})")
 
                     buffer = ""
                     async for chunk in response.aiter_text():
@@ -68,7 +68,9 @@ async def sse_collector():
                                 await broadcast(parsed)
 
         except Exception as e:
-            print(f"❌ SSE 연결 끊김: {e}")
+            import traceback
+            print(f"[ERR] SSE 연결 끊김: {e}")
+            traceback.print_exc()
             latest_data["connected"] = False
             await broadcast({"type": "status", "connected": False})
             await asyncio.sleep(3)
@@ -160,6 +162,10 @@ async def broadcast(data: dict):
 # ── FastAPI 앱 ──
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    import sys
+    print("[>>] Lifespan 시작, SSE collector 실행...", flush=True)
+    sys.stdout.flush()
+    sys.stderr.flush()
     task = asyncio.create_task(sse_collector())
     yield
     task.cancel()
@@ -178,7 +184,7 @@ app.add_middleware(
 async def websocket_endpoint(ws: WebSocket):
     await ws.accept()
     connected_clients.add(ws)
-    print(f"🔌 클라이언트 연결 ({len(connected_clients)}명)")
+    print(f"[WS] 클라이언트 연결 ({len(connected_clients)}명)")
 
     # 최신 데이터 즉시 전송
     await ws.send_text(json.dumps({
@@ -193,7 +199,7 @@ async def websocket_endpoint(ws: WebSocket):
             await ws.receive_text()  # keep alive
     except WebSocketDisconnect:
         connected_clients.discard(ws)
-        print(f"🔌 클라이언트 해제 ({len(connected_clients)}명)")
+        print(f"[WS] 클라이언트 해제 ({len(connected_clients)}명)")
 
 
 @app.get("/health")

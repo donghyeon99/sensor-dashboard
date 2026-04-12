@@ -79,7 +79,18 @@ def on_sensor_data(data: SensorData):
     # ▼▼▼ 아래에 여러분의 코드를 작성하세요 ▼▼▼
     # (Write your code below this line)
 
-    pass  # ← 이 줄을 지우고 코드를 작성하세요!
+    if data.eeg_analysis:
+        eeg = data.eeg_analysis
+        print(f"[EEG] Focus: {eeg.focus_index:.2f} | "
+              f"Stress: {eeg.stress_index:.2f} | "
+              f"Relax: {eeg.relaxation_index:.2f} | "
+              f"CogLoad: {eeg.cognitive_load:.2f} | "
+              f"TotalPwr: {eeg.total_power:.1f}")
+
+    if data.ppg_analysis:
+        ppg = data.ppg_analysis
+        spo2_text = f" | SpO2: {ppg.spo2:.1f}%" if ppg.spo2 else ""
+        print(f"[PPG] BPM: {ppg.bpm:.0f}{spo2_text}")
 
     # ▲▲▲ 위에 여러분의 코드를 작성하세요 ▲▲▲
 
