@@ -1,4 +1,4 @@
-import type { IndexThreshold } from '../../lib/indexThresholds'
+import type { IndexThreshold } from '../../lib/thresholds/indexThresholds'
 
 interface Props {
   threshold: IndexThreshold

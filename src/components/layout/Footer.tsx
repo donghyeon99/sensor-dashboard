@@ -1,9 +1,9 @@
 import { useRef, useState, useEffect } from 'react'
-import { useSensorDataStore } from '../../stores/sensorDataStore'
+import { useStatsStore } from '../../stores/slices/statsStore'
 import { useConnectionStore } from '../../stores/connectionStore'
 
 export function Footer() {
-  const messageCount = useSensorDataStore((s) => s.messageCount)
+  const messageCount = useStatsStore((s) => s.messageCount)
   const connected = useConnectionStore((s) => s.connected)
   const isMock = useConnectionStore((s) => s.isMock)
   const prevCount = useRef(messageCount)
@@ -11,7 +11,7 @@ export function Footer() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const current = useSensorDataStore.getState().messageCount
+      const current = useStatsStore.getState().messageCount
       setDataRate(current - prevCount.current)
       prevCount.current = current
     }, 1000)

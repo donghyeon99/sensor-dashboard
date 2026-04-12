@@ -1,27 +1,162 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
-@theme {
+@custom-variant dark (&:is(.dark *));
+
+/* ─── Theme-switchable custom properties ─── */
+:root,
+[data-theme="purple"] {
   --color-bg-base: #0a0a1a;
   --color-bg-card: #12122a;
   --color-bg-elevated: #1a1a3a;
   --color-bg-hover: #20204a;
-
+  --color-section-bg: #000000;
+  --color-section-border: #1f2937;
   --color-teal: #4ecdc4;
   --color-coral: #ff6b6b;
   --color-purple: #a855f7;
   --color-blue: #45b7d1;
   --color-green: #4ade80;
   --color-yellow: #facc15;
-
   --color-text-primary: #f0f0f8;
   --color-text-secondary: #8888aa;
   --color-text-muted: #44445a;
-
   --color-border: rgba(255, 255, 255, 0.06);
   --color-border-bright: rgba(255, 255, 255, 0.12);
+  --color-metric-bg: #1f2937;
+  --color-metric-border: #374151;
+  --color-metric-hover: #374151;
+  --color-metric-text: #d1d5db;
+  --color-metric-value: #ffffff;
+  --color-metric-muted: #9ca3af;
+}
 
+[data-theme="black"] {
+  --color-bg-base: #000000;
+  --color-bg-card: #0a0a0a;
+  --color-bg-elevated: #141414;
+  --color-bg-hover: #1f1f1f;
+  --color-section-bg: #000000;
+  --color-section-border: #222222;
+  --color-teal: #4ecdc4;
+  --color-coral: #ff6b6b;
+  --color-purple: #a855f7;
+  --color-blue: #45b7d1;
+  --color-green: #4ade80;
+  --color-yellow: #facc15;
+  --color-text-primary: #e8e8e8;
+  --color-text-secondary: #888888;
+  --color-text-muted: #444444;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-bright: rgba(255, 255, 255, 0.15);
+  --color-metric-bg: #111111;
+  --color-metric-border: #222222;
+  --color-metric-hover: #1a1a1a;
+  --color-metric-text: #cccccc;
+  --color-metric-value: #ffffff;
+  --color-metric-muted: #777777;
+}
+
+[data-theme="white"] {
+  --color-bg-base: #f8f9fa;
+  --color-bg-card: #ffffff;
+  --color-bg-elevated: #ffffff;
+  --color-bg-hover: #f0f0f0;
+  --color-section-bg: #ffffff;
+  --color-section-border: #e5e7eb;
+  --color-teal: #0d9488;
+  --color-coral: #dc2626;
+  --color-purple: #7c3aed;
+  --color-blue: #2563eb;
+  --color-green: #16a34a;
+  --color-yellow: #ca8a04;
+  --color-text-primary: #111827;
+  --color-text-secondary: #4b5563;
+  --color-text-muted: #9ca3af;
+  --color-border: rgba(0, 0, 0, 0.08);
+  --color-border-bright: rgba(0, 0, 0, 0.15);
+  --color-metric-bg: #f3f4f6;
+  --color-metric-border: #e5e7eb;
+  --color-metric-hover: #e5e7eb;
+  --color-metric-text: #374151;
+  --color-metric-value: #111827;
+  --color-metric-muted: #6b7280;
+}
+
+@theme {
+  --color-bg-base: var(--color-bg-base);
+  --color-bg-card: var(--color-bg-card);
+  --color-bg-elevated: var(--color-bg-elevated);
+  --color-bg-hover: var(--color-bg-hover);
+  --color-section-bg: var(--color-section-bg);
+  --color-section-border: var(--color-section-border);
+  --color-teal: var(--color-teal);
+  --color-coral: var(--color-coral);
+  --color-purple: var(--color-purple);
+  --color-blue: var(--color-blue);
+  --color-green: var(--color-green);
+  --color-yellow: var(--color-yellow);
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-muted: var(--color-text-muted);
+  --color-border: var(--color-border);
+  --color-border-bright: var(--color-border-bright);
+  --color-metric-bg: var(--color-metric-bg);
+  --color-metric-border: var(--color-metric-border);
+  --color-metric-hover: var(--color-metric-hover);
+  --color-metric-text: var(--color-metric-text);
+  --color-metric-value: var(--color-metric-value);
+  --color-metric-muted: var(--color-metric-muted);
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+
+/* shadcn/ui CSS variables — auto-derived from theme */
+:root {
+  --background: var(--color-bg-base);
+  --foreground: var(--color-text-primary);
+  --card: var(--color-bg-card);
+  --card-foreground: var(--color-text-primary);
+  --popover: var(--color-bg-card);
+  --popover-foreground: var(--color-text-primary);
+  --primary: var(--color-teal);
+  --primary-foreground: #000000;
+  --secondary: var(--color-bg-elevated);
+  --secondary-foreground: var(--color-text-primary);
+  --muted: var(--color-bg-elevated);
+  --muted-foreground: var(--color-text-secondary);
+  --accent: var(--color-bg-elevated);
+  --accent-foreground: var(--color-text-primary);
+  --destructive: var(--color-coral);
+  --destructive-foreground: #ffffff;
+  --border: var(--color-border);
+  --input: var(--color-border-bright);
+  --ring: var(--color-teal);
+  --radius: 0.625rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
 body {

@@ -1,0 +1,41 @@
+// Design Ref: §3.2 — internal buffer state for each sensor domain
+import type { EegChannelFilter } from '../dsp/eegPipeline'
+import type { PpgChannelFilter } from '../dsp/ppgPipeline'
+import type { DataPoint } from '../../types/sensor'
+
+export interface EegBufferState {
+  fp1: DataPoint[]
+  fp2: DataPoint[]
+  sqCh1: DataPoint[]
+  sqCh2: DataPoint[]
+  sampleIndex: number
+  fp1Filter: EegChannelFilter
+  fp2Filter: EegChannelFilter
+  rawLeadOff: { ch1: boolean; ch2: boolean }
+}
+
+export interface PpgBufferState {
+  ir: DataPoint[]
+  red: DataPoint[]
+  irFiltered: DataPoint[]
+  redFiltered: DataPoint[]
+  irFilter: PpgChannelFilter
+  redFilter: PpgChannelFilter
+  sampleIndex: number
+  bpmHistory: DataPoint[]
+  spo2History: DataPoint[]
+  historyIndex: number
+}
+
+export interface AccBufferState {
+  x: DataPoint[]
+  y: DataPoint[]
+  z: DataPoint[]
+  magnitude: DataPoint[]
+  sampleIndex: number
+}
+
+export const EEG_BUFFER_SIZE = 1000 // ~4s @ 250Hz
+export const PPG_BUFFER_SIZE = 200 // ~4s @ 50Hz
+export const ACC_BUFFER_SIZE = 100 // ~4s @ 25Hz
+export const HISTORY_SIZE = 120 // ~2min analysis trend

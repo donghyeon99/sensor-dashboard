@@ -24,7 +24,7 @@ const POS_INF = Number.POSITIVE_INFINITY
 export const eegIndexThresholds: Record<string, IndexThreshold> = {
   focusIndex: {
     key: 'focusIndex',
-    displayName: '집중력 (Focus)',
+    displayName: 'Focus',
     description: 'Represents cognitive focus level. Higher values indicate deep focus, lower values indicate attention distraction.',
     formula: 'Focus = β / (α + θ)',
     reference: 'Klimesch, W. (1999). Brain Research Reviews, 29(2-3), 169-195',
@@ -37,7 +37,7 @@ export const eegIndexThresholds: Record<string, IndexThreshold> = {
   },
   relaxationIndex: {
     key: 'relaxationIndex',
-    displayName: '이완및긴장도 (Arousal)',
+    displayName: 'Arousal',
     description: 'Measures mental arousal and relaxation based on relative alpha-wave activity. Higher = more relaxed, lower = more tense.',
     formula: 'Relaxation = α / (α + β)',
     reference: 'Bazanova & Vernon (2014). Neurosci. & Biobehav. Rev., 44, 94-110',
@@ -50,7 +50,7 @@ export const eegIndexThresholds: Record<string, IndexThreshold> = {
   },
   stressIndex: {
     key: 'stressIndex',
-    displayName: '스트레스 (Stress)',
+    displayName: 'Stress',
     description: 'Reflects mental stress and arousal. Rises with increased high-frequency (beta, gamma) activity.',
     formula: 'Stress = (β + γ) / (α + θ)',
     reference: 'Ahn, J. W., et al. (2019). Sensors, 19(21), 4644',
@@ -65,7 +65,7 @@ export const eegIndexThresholds: Record<string, IndexThreshold> = {
   },
   hemisphericBalance: {
     key: 'hemisphericBalance',
-    displayName: '좌우뇌 균형',
+    displayName: 'Hemispheric Balance',
     description: 'Balance of alpha-wave activity between left and right brain hemispheres. Reflects emotional and cognitive bias.',
     formula: '(αL − αR) / (αL + αR)',
     reference: 'Davidson, R. J. (2004). Biological Psychology, 67(1-2), 219-234',
@@ -78,7 +78,7 @@ export const eegIndexThresholds: Record<string, IndexThreshold> = {
   },
   cognitiveLoad: {
     key: 'cognitiveLoad',
-    displayName: '인지 부하',
+    displayName: 'Cognitive Load',
     description: 'Reflects mental workload and effort based on theta/alpha ratio.',
     formula: 'Cognitive Load = θ / α',
     reference: 'Gevins & Smith (2003). Theoretical Issues in Ergonomics Science, 4(1-2), 113-131',
@@ -92,7 +92,7 @@ export const eegIndexThresholds: Record<string, IndexThreshold> = {
   },
   emotionalStability: {
     key: 'emotionalStability',
-    displayName: '정서안정성 (Valence)',
+    displayName: 'Emotional Stability',
     description: 'Measures emotional regulation based on ratio of low-frequency bands to gamma power.',
     formula: 'Emotional Stability = (α + θ) / γ',
     reference: 'Knyazev, G. G. (2007). Neurosci. & Biobehav. Rev., 31(3), 377-395',
@@ -105,7 +105,7 @@ export const eegIndexThresholds: Record<string, IndexThreshold> = {
   },
   totalPower: {
     key: 'totalPower',
-    displayName: '신경활동성',
+    displayName: 'Total Power',
     unit: 'μV²',
     description: 'Sum of all EEG band powers, representing overall neural activity level.',
     formula: 'δ + θ + α + β + γ',
@@ -395,4 +395,17 @@ export function getThresholdBgClass(color: ThresholdColor): string {
 
 export function getThresholdBorderClass(color: ThresholdColor): string {
   return borderClassMap[color]
+}
+
+const dotClassMap: Record<ThresholdColor, string> = {
+  red: 'bg-red-500',
+  orange: 'bg-orange-500',
+  yellow: 'bg-yellow-500',
+  green: 'bg-green-500',
+  blue: 'bg-blue-500',
+  purple: 'bg-purple-500',
+}
+
+export function getThresholdDotClass(color: ThresholdColor): string {
+  return dotClassMap[color]
 }

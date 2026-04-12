@@ -1,82 +1,29 @@
-import { useMemo } from 'react'
-import { useSensorDataStore } from '../../stores/sensorDataStore'
-import { useConnectionStore } from '../../stores/connectionStore'
+import { Clock } from 'lucide-react'
+import { useEegStore } from '../../stores/slices/eegStore'
 import {
   eegIndexThresholds,
   classifyIndex,
   getThresholdTextClass,
+  getThresholdDotClass,
   type IndexThreshold,
-} from '../../lib/indexThresholds'
-import { computeEegPower } from '../../lib/eegPower'
+} from '../../lib/thresholds/indexThresholds'
 import { IndexTooltip } from './IndexTooltip'
 
-interface IndexDef {
-  threshold: IndexThreshold
-  dotColor: string
-  basis: string
-}
-
-const indices: IndexDef[] = [
-  { threshold: eegIndexThresholds.relaxationIndex, dotColor: 'bg-red-500', basis: 'α / (α + β)' },
-  { threshold: eegIndexThresholds.emotionalStability, dotColor: 'bg-pink-500', basis: '(α + θ) / γ' },
-  { threshold: eegIndexThresholds.focusIndex, dotColor: 'bg-yellow-500', basis: 'β / (α + θ)' },
-  { threshold: eegIndexThresholds.stressIndex, dotColor: 'bg-orange-500', basis: '(β + γ) / (α + θ)' },
-  { threshold: eegIndexThresholds.totalPower, dotColor: 'bg-green-500', basis: 'Σ band powers' },
-  { threshold: eegIndexThresholds.cognitiveLoad, dotColor: 'bg-blue-500', basis: 'θ / α' },
-  { threshold: eegIndexThresholds.hemisphericBalance, dotColor: 'bg-purple-500', basis: '(αL − αR) / (αL + αR)' },
+const indices: IndexThreshold[] = [
+  eegIndexThresholds.relaxationIndex,
+  eegIndexThresholds.emotionalStability,
+  eegIndexThresholds.focusIndex,
+  eegIndexThresholds.stressIndex,
+  eegIndexThresholds.totalPower,
+  eegIndexThresholds.cognitiveLoad,
+  eegIndexThresholds.hemisphericBalance,
 ]
 
-function IndexCard({ idx, value }: { idx: IndexDef; value: number | undefined }) {
-  const hasValue = value !== undefined && value !== null && !Number.isNaN(value)
-  const level = hasValue ? classifyIndex(value as number, idx.threshold) : null
-  const colorClass = level ? getThresholdTextClass(level.color) : 'text-text-muted'
-  return (
-    <div className="group relative bg-bg-elevated border border-border rounded-xl p-4 hover:bg-bg-hover transition-colors">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className={`w-2.5 h-2.5 rounded-full ${idx.dotColor}`} />
-          <span className="text-sm font-semibold text-text-primary">{idx.threshold.displayName}</span>
-        </div>
-        <span className="text-[10px] font-mono text-text-muted px-1.5 py-0.5 bg-bg-base rounded">{idx.basis}</span>
-      </div>
-      <div className="text-3xl font-extrabold text-text-primary mb-1 font-mono tracking-tight">
-        {hasValue ? (value as number).toFixed(2) : '--'}
-        {idx.threshold.unit && <span className="text-sm text-text-muted ml-1 font-normal">{idx.threshold.unit}</span>}
-      </div>
-      <div className={`text-xs font-semibold mb-2 ${colorClass}`}>{level ? level.label : 'No data'}</div>
-      {idx.threshold.description && (
-        <div className="text-[11px] text-text-muted leading-relaxed opacity-70 group-hover:opacity-100 transition-opacity">
-          {idx.threshold.description}
-        </div>
-      )}
-      <IndexTooltip threshold={idx.threshold} />
-    </div>
-  )
-}
-
 export function IndexCards() {
-  const eegAnalysis = useSensorDataStore((s) => s.eegAnalysis)
-  const fp1 = useSensorDataStore((s) => s.eegFp1)
-  const fp2 = useSensorDataStore((s) => s.eegFp2)
-  const connected = useConnectionStore((s) => s.connected)
-
-  const computedTotalPower = useMemo(() => {
-    const result = computeEegPower(fp1, fp2, 250)
-    return result?.totalPowerLinear
-  }, [fp1, fp2])
-
-  if (!connected || !eegAnalysis) {
-    return (
-      <div className="text-center py-8">
-        <div className="text-4xl mb-2">🧠</div>
-        <div className="text-sm text-text-secondary">
-          {connected ? 'Waiting for analysis index data...' : 'Press the Connect button to connect'}
-        </div>
-      </div>
-    )
-  }
+  const eegAnalysis = useEegStore((s) => s.analysis)
 
   const valueFor = (key: string): number | undefined => {
+    if (!eegAnalysis) return undefined
     switch (key) {
       case 'focusIndex': return eegAnalysis.focusIndex
       case 'relaxationIndex': return eegAnalysis.relaxationIndex
@@ -84,22 +31,48 @@ export function IndexCards() {
       case 'emotionalStability': return eegAnalysis.emotionalStability
       case 'hemisphericBalance': return eegAnalysis.hemisphericBalance
       case 'cognitiveLoad': return eegAnalysis.cognitiveLoad
-      case 'totalPower': return computedTotalPower
+      case 'totalPower': return eegAnalysis.totalPower
       default: return undefined
     }
+  }
+
+  const renderCard = (threshold: IndexThreshold) => {
+    const value = valueFor(threshold.key)
+    const hasValue = typeof value === 'number' && Number.isFinite(value)
+    const level = hasValue ? classifyIndex(value!, threshold) : null
+    const colorClass = level ? getThresholdTextClass(level.color) : 'text-metric-muted'
+    const dotClass = level ? getThresholdDotClass(level.color) : 'bg-gray-500'
+    const opacityClass = hasValue ? 'opacity-100' : 'opacity-60'
+
+    return (
+      <div
+        key={threshold.key}
+        className={`group relative bg-metric-bg border border-metric-border rounded-lg p-4 hover:bg-metric-hover transition-colors ${opacityClass}`}
+      >
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <div className={`w-3 h-3 rounded-full ${dotClass}`}></div>
+            <span className="text-sm font-medium text-metric-text">{threshold.displayName}</span>
+          </div>
+          {!hasValue && <Clock className="w-3 h-3 text-metric-muted" aria-hidden="true" />}
+        </div>
+        <div className="text-2xl font-bold text-metric-value mb-1">
+          {hasValue ? value!.toFixed(2) : '--'}
+          {threshold.unit && <span className="text-sm text-metric-muted ml-1">{threshold.unit}</span>}
+        </div>
+        <div className={`text-xs font-medium mb-1 ${colorClass}`}>{level?.label ?? 'No data'}</div>
+        <IndexTooltip threshold={threshold} />
+      </div>
+    )
   }
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {indices.slice(0, 4).map((idx) => (
-          <IndexCard key={idx.threshold.key} idx={idx} value={valueFor(idx.threshold.key)} />
-        ))}
+        {indices.slice(0, 4).map(renderCard)}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {indices.slice(4).map((idx) => (
-          <IndexCard key={idx.threshold.key} idx={idx} value={valueFor(idx.threshold.key)} />
-        ))}
+        {indices.slice(4).map(renderCard)}
       </div>
     </div>
   )

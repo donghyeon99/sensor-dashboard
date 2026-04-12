@@ -65,7 +65,8 @@
     },
     "ppgAnalysis": { "bpm": float, "spo2": float|null },
     "ppgRaw": [{ "ir": float, "red": float, "timestamp": float }],
-    "accelerometer": [{ "x": float, "y": float, "z": float, "timestamp": float }],
+    "accRaw": [{ "x": float, "y": float, "z": float, "magnitude"?: float, "timestamp": float }],
+    "accAnalysis": { "activityState": string, "intensity": float, "stability": float, "avgMovement": float, "maxMovement": float },
     "battery": { "level": int }
   }
 }
@@ -113,7 +114,7 @@
 | # | 기준 | 검증 방법 |
 |---|------|-----------|
 | SC-1 | SSE URL 붙여넣기로 즉시 연결 | mock URL로 Connect → 데이터 수신 확인 |
-| SC-2 | EEG Visualizer 7개 컴포넌트 모두 실시간 렌더링 | echarts 차트에 데이터 표시 확인 |
+| SC-2 | EEG Visualizer 8개 컴포넌트 실시간 렌더링 (Raw×2, SQI×2, Spectrum, BandPower, IndexCards, LeadOffBanner) | echarts 차트에 데이터 표시 확인 |
 | SC-3 | PPG Visualizer 4개 컴포넌트 실시간 렌더링 | BPM/SpO2 차트 + 카드 동작 확인 |
 | SC-4 | ACC Visualizer 3개 컴포넌트 실시간 렌더링 | X/Y/Z 파형 차트 동작 확인 |
 | SC-5 | 카테고리 탭 전환 시 데이터 유실 없음 | 탭 전환 후 복귀 시 차트 유지 |
