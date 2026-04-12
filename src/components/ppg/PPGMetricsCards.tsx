@@ -27,7 +27,7 @@ function MetricCard({ threshold, value, decimals = 1, requirePositive }: MetricC
   const dotClass = level ? getThresholdDotClass(level.color) : 'bg-gray-500'
 
   return (
-    <div className={`group relative bg-metric-bg border border-metric-border rounded-lg p-4 hover:bg-metric-hover transition-colors ${valid ? 'opacity-100' : 'opacity-60'}`}>
+    <div className="group relative bg-metric-bg border border-metric-border rounded-lg p-4 hover:bg-metric-hover transition-colors">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <div className={`w-3 h-3 rounded-full ${dotClass}`}></div>
