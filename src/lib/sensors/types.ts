@@ -42,7 +42,7 @@ export interface AccBufferState {
   sampleIndex: number
 }
 
-export const EEG_BUFFER_SIZE = 1000 // ~4s @ 250Hz
-export const PPG_BUFFER_SIZE = 200 // ~4s @ 50Hz
-export const ACC_BUFFER_SIZE = 100 // ~4s @ 25Hz
+export const EEG_BUFFER_SIZE = 1000 // ~4s @ 250Hz (matches linkband maxDataPoints)
+export const PPG_BUFFER_SIZE = 400 // ~8s @ 50Hz (matches linkband maxBufferSize)
+export const ACC_BUFFER_SIZE = 500 // ~20s @ 25Hz
 export const HISTORY_SIZE = 120 // ~2min analysis trend

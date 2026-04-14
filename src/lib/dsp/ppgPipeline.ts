@@ -40,7 +40,8 @@ export function processPpgSample(filter: PpgChannelFilter, sample: number): numb
 
 /**
  * Amplitude-based PPG SQI matching sdk.linkband.store logic.
- * Sliding window of 25 samples; amplitude <= threshold → 100%, beyond → proportional decay.
+ * Sliding window of 25 samples; DC removed per window (like linkband's mean subtraction),
+ * then amplitude <= threshold → 100%, beyond → proportional decay.
  */
 const SQI_WINDOW = 25
 const SQI_AMP_THRESHOLD = 250
@@ -49,9 +50,14 @@ export function calculatePpgSqi(filteredData: number[]): number[] {
   const len = filteredData.length
   const result = new Array<number>(len).fill(0)
   for (let i = 0; i <= len - SQI_WINDOW; i++) {
+    // Remove local DC offset (matches linkband's mean subtraction before SQI)
+    let mean = 0
+    for (let j = i; j < i + SQI_WINDOW; j++) mean += filteredData[j]
+    mean /= SQI_WINDOW
+
     let sum = 0
     for (let j = i; j < i + SQI_WINDOW; j++) {
-      const amp = Math.abs(filteredData[j])
+      const amp = Math.abs(filteredData[j] - mean)
       if (amp <= SQI_AMP_THRESHOLD) {
         sum += 1
       } else {

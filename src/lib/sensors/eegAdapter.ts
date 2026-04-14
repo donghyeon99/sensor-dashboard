@@ -1,6 +1,6 @@
-// Design Ref: §3.2, §3.3 D5 — EEG raw ingest with sq split (Ch1/Ch2)
+// Design Ref: §3.2, §3.3 D5 — EEG raw ingest with amplitude-based SQI (Ch1/Ch2)
 import type { DataPoint, EegAnalysis, EegRawSample } from '../../types/sensor'
-import { createEegChannelFilter, processEegSample } from '../dsp/eegPipeline'
+import { calculateEegSqi, createEegChannelFilter, processEegSample } from '../dsp/eegPipeline'
 import { EEG_BUFFER_SIZE, type EegBufferState } from './types'
 
 export const createEegBufferState = (): EegBufferState => ({
@@ -20,20 +20,35 @@ export function ingestEegRaw(prev: EegBufferState, samples: EegRawSample[]): Eeg
   const fp2Filter = { ...prev.fp2Filter }
   const newFp1: DataPoint[] = []
   const newFp2: DataPoint[] = []
-  const newSqCh1: DataPoint[] = []
-  const newSqCh2: DataPoint[] = []
+  const newFp1Vals: number[] = []
+  const newFp2Vals: number[] = []
   let idx = prev.sampleIndex
   for (const s of samples) {
     const v1 = processEegSample(fp1Filter, s.fp1)
     const v2 = processEegSample(fp2Filter, s.fp2)
     newFp1.push({ index: idx, value: v1 })
     newFp2.push({ index: idx, value: v2 })
-    // SSE signalQuality is single-valued per sample; mirror to both channel buffers
-    const sqValue = Math.max(0, 100 - (s.signalQuality ?? 0))
-    newSqCh1.push({ index: idx, value: sqValue })
-    newSqCh2.push({ index: idx, value: sqValue })
+    newFp1Vals.push(v1)
+    newFp2Vals.push(v2)
     idx++
   }
+
+  // Amplitude-based SQI per channel (matches sdk.linkband.store)
+  const allFp1 = [...prev.fp1.map((p) => p.value), ...newFp1Vals]
+  const allFp2 = [...prev.fp2.map((p) => p.value), ...newFp2Vals]
+  const ch1SqiVals = calculateEegSqi(allFp1)
+  const ch2SqiVals = calculateEegSqi(allFp2)
+
+  const offset = prev.fp1.length
+  const startIdx = prev.sampleIndex
+  const newSqCh1: DataPoint[] = []
+  const newSqCh2: DataPoint[] = []
+  for (let i = 0; i < samples.length; i++) {
+    const j = offset + i
+    newSqCh1.push({ index: startIdx + i, value: ch1SqiVals[j] ?? 0 })
+    newSqCh2.push({ index: startIdx + i, value: ch2SqiVals[j] ?? 0 })
+  }
+
   const last = samples[samples.length - 1]
   return {
     fp1: [...prev.fp1, ...newFp1].slice(-EEG_BUFFER_SIZE),

@@ -42,3 +42,52 @@ export function processEegSample(filter: EegChannelFilter, sample: number): numb
   filter.samplesProcessed++
   return out
 }
+
+/**
+ * Amplitude-based EEG SQI matching sdk.linkband.store logic.
+ * Combined SQI = 70% amplitude + 30% frequency (variance-based).
+ * Window: 125 samples (~0.5s @250Hz), amplitude threshold: 150μV.
+ * Local DC removed per window to match linkband's mean subtraction.
+ */
+const EEG_SQI_WINDOW = 125
+const EEG_AMP_THRESHOLD = 150
+
+export function calculateEegSqi(filteredData: number[]): number[] {
+  const len = filteredData.length
+  const ampSqi = new Array<number>(len).fill(0)
+  const freqSqi = new Array<number>(len).fill(0)
+
+  for (let i = 0; i <= len - EEG_SQI_WINDOW; i++) {
+    // Remove local DC offset (matches linkband's approach)
+    let mean = 0
+    for (let j = i; j < i + EEG_SQI_WINDOW; j++) mean += filteredData[j]
+    mean /= EEG_SQI_WINDOW
+
+    // Amplitude SQI (on DC-removed signal)
+    let ampSum = 0
+    for (let j = i; j < i + EEG_SQI_WINDOW; j++) {
+      const amp = Math.abs(filteredData[j] - mean)
+      if (amp <= EEG_AMP_THRESHOLD) {
+        ampSum += 1
+      } else {
+        const excess = Math.min((amp - EEG_AMP_THRESHOLD) / EEG_AMP_THRESHOLD, 1)
+        ampSum += Math.max(0, 1 - excess)
+      }
+    }
+    const ampAvg = ampSum / EEG_SQI_WINDOW
+
+    // Frequency SQI (variance of DC-removed signal, normalized by threshold²)
+    let varSum = 0
+    for (let j = i; j < i + EEG_SQI_WINDOW; j++) varSum += (filteredData[j] - mean) ** 2
+    const variance = varSum / EEG_SQI_WINDOW
+    const freqScore = Math.max(0, Math.min(1, 1 - variance / (EEG_AMP_THRESHOLD * EEG_AMP_THRESHOLD)))
+
+    for (let j = i; j < i + EEG_SQI_WINDOW && j < len; j++) {
+      ampSqi[j] = ampAvg
+      freqSqi[j] = freqScore
+    }
+  }
+
+  // Combined: 70% amplitude + 30% frequency, scaled to 0-100%
+  return ampSqi.map((a, i) => (0.7 * a + 0.3 * freqSqi[i]) * 100)
+}
