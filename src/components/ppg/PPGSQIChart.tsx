@@ -1,32 +1,28 @@
 import { useMemo } from 'react'
 import { BaseChart } from '../../lib/charts/BaseChart'
 import { buildRealtimeLineOption } from '../../lib/charts/optionBuilders'
-import { useEegStore } from '../../stores/slices/eegStore'
+import { usePpgStore } from '../../stores/slices/ppgStore'
 
-interface Props {
-  channel: 'ch1' | 'ch2'
-}
+export function PPGSQIChart() {
+  const sqi = usePpgStore((s) => s.sqi)
 
-export function PPGSQIChart({ channel }: Props) {
-  const sqCh1 = useEegStore((s) => s.sqCh1)
-  const sqCh2 = useEegStore((s) => s.sqCh2)
-  const data = channel === 'ch1' ? sqCh1 : sqCh2
-  const color = channel === 'ch1' ? '#10b981' : '#f59e0b'
-
-  const chartData = useMemo(() => data.map((p, i) => [i, p.value]), [data])
+  const chartData = useMemo(
+    () => sqi.overallSQI.map((p, i) => [i, p.value]),
+    [sqi.overallSQI],
+  )
 
   const option = useMemo(
     () =>
       buildRealtimeLineOption({
-        color,
+        color: '#10b981',
         yName: '%',
         yMin: 0,
         yMax: 100,
         yNameGap: 35,
         area: true,
-        tooltipFormatter: (params: any) => `SQI: ${params[0]?.value?.[1]?.toFixed(1)}%`,
+        tooltipFormatter: (params: any) => `PPG SQI: ${params[0]?.value?.[1]?.toFixed(1)}%`,
       }),
-    [color],
+    [],
   )
 
   return (

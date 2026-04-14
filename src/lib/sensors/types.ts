@@ -14,6 +14,12 @@ export interface EegBufferState {
   rawLeadOff: { ch1: boolean; ch2: boolean }
 }
 
+export interface PpgSqiData {
+  redSQI: DataPoint[]
+  irSQI: DataPoint[]
+  overallSQI: DataPoint[]
+}
+
 export interface PpgBufferState {
   ir: DataPoint[]
   red: DataPoint[]
@@ -22,6 +28,7 @@ export interface PpgBufferState {
   irFilter: PpgChannelFilter
   redFilter: PpgChannelFilter
   sampleIndex: number
+  sqi: PpgSqiData
   bpmHistory: DataPoint[]
   spo2History: DataPoint[]
   historyIndex: number

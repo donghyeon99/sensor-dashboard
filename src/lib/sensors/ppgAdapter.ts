@@ -1,6 +1,6 @@
-// Design Ref: §3.2, §3.3 — PPG raw ingest with 0.5-5Hz bandpass filter
+// Design Ref: §3.2, §3.3 — PPG raw ingest with 0.5-5Hz bandpass filter + amplitude-based SQI
 import type { DataPoint, PpgAnalysis, PpgRawSample } from '../../types/sensor'
-import { createPpgChannelFilter, processPpgSample } from '../dsp/ppgPipeline'
+import { calculatePpgSqi, createPpgChannelFilter, processPpgSample } from '../dsp/ppgPipeline'
 import { HISTORY_SIZE, PPG_BUFFER_SIZE, type PpgBufferState } from './types'
 
 export const createPpgBufferState = (): PpgBufferState => ({
@@ -11,6 +11,7 @@ export const createPpgBufferState = (): PpgBufferState => ({
   irFilter: createPpgChannelFilter(),
   redFilter: createPpgChannelFilter(),
   sampleIndex: 0,
+  sqi: { redSQI: [], irSQI: [], overallSQI: [] },
   bpmHistory: [],
   spo2History: [],
   historyIndex: 0,
@@ -22,22 +23,55 @@ export function ingestPpgRaw(prev: PpgBufferState, samples: PpgRawSample[]): Ppg
   const redFilter = { ...prev.redFilter }
   const newIr: DataPoint[] = []
   const newRed: DataPoint[] = []
-  const newIrFiltered: DataPoint[] = []
-  const newRedFiltered: DataPoint[] = []
+  const newIrFilteredPts: DataPoint[] = []
+  const newRedFilteredPts: DataPoint[] = []
+  const newIrFilteredVals: number[] = []
+  const newRedFilteredVals: number[] = []
   let idx = prev.sampleIndex
   for (const s of samples) {
     newIr.push({ index: idx, value: s.ir })
     newRed.push({ index: idx, value: s.red })
-    newIrFiltered.push({ index: idx, value: processPpgSample(irFilter, s.ir) })
-    newRedFiltered.push({ index: idx, value: processPpgSample(redFilter, s.red) })
+    const irVal = processPpgSample(irFilter, s.ir)
+    const redVal = processPpgSample(redFilter, s.red)
+    newIrFilteredPts.push({ index: idx, value: irVal })
+    newRedFilteredPts.push({ index: idx, value: redVal })
+    newIrFilteredVals.push(irVal)
+    newRedFilteredVals.push(redVal)
     idx++
   }
+
+  // Amplitude-based SQI (matches sdk.linkband.store)
+  const allIrFiltered = [...prev.irFiltered.map((p) => p.value), ...newIrFilteredVals]
+  const allRedFiltered = [...prev.redFiltered.map((p) => p.value), ...newRedFilteredVals]
+  const irSqiVals = calculatePpgSqi(allIrFiltered)
+  const redSqiVals = calculatePpgSqi(allRedFiltered)
+
+  // Build SQI DataPoint arrays for the new samples only
+  const offset = prev.irFiltered.length
+  const startIdx = prev.sampleIndex
+  const newRedSQI: DataPoint[] = []
+  const newIrSQI: DataPoint[] = []
+  const newOverallSQI: DataPoint[] = []
+  for (let i = 0; i < samples.length; i++) {
+    const j = offset + i
+    const r = redSqiVals[j] ?? 0
+    const ir = irSqiVals[j] ?? 0
+    newRedSQI.push({ index: startIdx + i, value: r })
+    newIrSQI.push({ index: startIdx + i, value: ir })
+    newOverallSQI.push({ index: startIdx + i, value: (r + ir) / 2 })
+  }
+
   return {
     ...prev,
     ir: [...prev.ir, ...newIr].slice(-PPG_BUFFER_SIZE),
     red: [...prev.red, ...newRed].slice(-PPG_BUFFER_SIZE),
-    irFiltered: [...prev.irFiltered, ...newIrFiltered].slice(-PPG_BUFFER_SIZE),
-    redFiltered: [...prev.redFiltered, ...newRedFiltered].slice(-PPG_BUFFER_SIZE),
+    irFiltered: [...prev.irFiltered, ...newIrFilteredPts].slice(-PPG_BUFFER_SIZE),
+    redFiltered: [...prev.redFiltered, ...newRedFilteredPts].slice(-PPG_BUFFER_SIZE),
+    sqi: {
+      redSQI: [...prev.sqi.redSQI, ...newRedSQI].slice(-PPG_BUFFER_SIZE),
+      irSQI: [...prev.sqi.irSQI, ...newIrSQI].slice(-PPG_BUFFER_SIZE),
+      overallSQI: [...prev.sqi.overallSQI, ...newOverallSQI].slice(-PPG_BUFFER_SIZE),
+    },
     irFilter,
     redFilter,
     sampleIndex: idx,
