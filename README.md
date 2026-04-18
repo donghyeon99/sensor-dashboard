@@ -234,10 +234,16 @@ SSE 패킷 ─→ per-stream FIFO 큐
        chart re-renders smoothly
 ```
 
-- **Playback buffer**: EEG 1s, PPG 1.5s, ACC 2s 만큼 미리 모은 후 재생 시작 → 네트워크 지터 흡수
-- **Hold-last-sample**: 짧은 SSE 갭(≤800ms) 동안엔 마지막 샘플을 복제해 차트 흐름 유지, 그 이상 침묵이면 정직하게 멈춤
-- **Idle resync**: 탭 백그라운드 후 복귀 시 큐를 최근 1초치만 남기고 트림 → "지금 시점"부터 재생 (라이브 스트림 방식)
+- **Playback queue**: per-stream FIFO 큐 (EEG max 6s, PPG max 4s, ACC max 5s) — 큐 자체가 네트워크 지터를 흡수. 별도 prebuffer 없이 첫 패킷 도착 즉시 재생 시작 (priming 로직은 작은 패킷 + 무음 시 영구 freeze 위험으로 제거됨)
+- **Hold-last-sample (스트림별)**: 짧은 SSE 갭 동안 마지막 샘플을 복제해 차트 흐름 유지. EEG/PPG는 800ms (빠른 신호), ACC는 3.5s (천천히 변하고 패킷 간격 자연스럽게 큼). 한도 초과 시 정직하게 멈춤
+- **Idle resync**: 탭 백그라운드 후 복귀 시 큐를 최근 target buffer만큼 남기고 트림 → "지금 시점"부터 재생 (라이브 스트림 방식)
+- **Frame loop hardening**: try/finally + rafId 사전 클리어로 본체 throw 발생 시에도 다음 프레임 자동 재예약. 영구 freeze 방지
+- **SSE 견고화**: JSON.parse 손상 패킷 격리 + 5초 stall watchdog + CONNECTING 상태 표시
 - **HMR dispose**: Vite 핫 리로드 시 옛 EventSource 자동 정리 → 모듈 교체 후 SSE 핸들러가 stale closure에 묶이는 문제 방지
+
+### 4-5. 버전 정보 표시
+
+빌드 시 vite.config.ts가 `package.json` 버전, 현재 git SHA, 가장 최근 git tag를 `__APP_VERSION__` / `__APP_GIT_SHA__` / `__APP_GIT_TAG__`로 주입합니다. 헤더 좌상단에 작은 모노스페이스 뱃지로 표시되며 (예: `checkpoint-pacing-v1 · 7147291`), tooltip에 풀 정보가 나타납니다. 사용자가 버전 식별 후 이슈 리포트 시 활용 가능.
 
 ---
 
