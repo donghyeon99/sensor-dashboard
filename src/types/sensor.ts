@@ -10,6 +10,7 @@ export interface EegRawSample {
 export interface PpgRawSample {
   ir: number
   red: number
+  leadOff?: { ch1: boolean; ch2: boolean }
   timestamp: number
 }
 

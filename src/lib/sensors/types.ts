@@ -6,6 +6,8 @@ import type { DataPoint } from '../../types/sensor'
 export interface EegBufferState {
   fp1: DataPoint[]
   fp2: DataPoint[]
+  fp1Raw: number[]
+  fp2Raw: number[]
   sqCh1: DataPoint[]
   sqCh2: DataPoint[]
   sampleIndex: number

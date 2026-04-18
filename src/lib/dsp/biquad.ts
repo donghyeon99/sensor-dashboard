@@ -44,6 +44,34 @@ export function highpassCoefs(sampleRate: number, f0: number, q: number): Biquad
   }
 }
 
+export function bandpassCoefs(sampleRate: number, f0: number, q: number): BiquadCoefs {
+  // RBJ "constant 0 dB peak gain" bandpass — matches linkband Yf bandpass form
+  const w0 = (2 * Math.PI * f0) / sampleRate
+  const cos = Math.cos(w0)
+  const alpha = Math.sin(w0) / (2 * q)
+  const a0 = 1 + alpha
+  return {
+    b0: alpha / a0,
+    b1: 0,
+    b2: -alpha / a0,
+    a1: (-2 * cos) / a0,
+    a2: (1 - alpha) / a0,
+  }
+}
+
+// linkband-style Q calculators (Yf.calcBandpassQ / calcNotchQ)
+export function calcLinkbandBandpassQ(fLow: number, fHigh: number): number {
+  const fc = (fLow + fHigh) / 2
+  const bw = fHigh - fc
+  const n = Math.pow(10, Math.floor(Math.log10(fc)))
+  return (n * Math.sqrt((fc - bw) * (fc + bw))) / (2 * bw)
+}
+
+export function calcLinkbandNotchQ(f0: number, bw: number): number {
+  const n = Math.pow(10, Math.floor(Math.log10(f0)))
+  return (n * f0 * bw) / Math.sqrt((f0 - bw) * (f0 + bw))
+}
+
 export function lowpassCoefs(sampleRate: number, f0: number, q: number): BiquadCoefs {
   const w0 = (2 * Math.PI * f0) / sampleRate
   const cos = Math.cos(w0)

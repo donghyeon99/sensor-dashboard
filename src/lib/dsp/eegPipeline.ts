@@ -12,7 +12,7 @@ export const EEG_SAMPLE_RATE = 250
 export const EEG_TRANSIENT_SAMPLES = 250
 
 const BUTTERWORTH_Q = 1 / Math.SQRT2
-const NOTCH_COEFS = notchCoefs(EEG_SAMPLE_RATE, 60, 30)
+const NOTCH_COEFS = notchCoefs(EEG_SAMPLE_RATE, 60, 2) // Q=2 matches linkband
 const HP_COEFS = highpassCoefs(EEG_SAMPLE_RATE, 1, BUTTERWORTH_Q)
 const LP_COEFS = lowpassCoefs(EEG_SAMPLE_RATE, 45, BUTTERWORTH_Q)
 

@@ -25,6 +25,9 @@ export function PPGFilteredChart() {
         ],
         yName: 'Filtered',
         yNameGap: 50,
+        // Fixed y-range matches sdk.linkband.store (PPG SQI amp threshold = ±250)
+        yMin: -250,
+        yMax: 250,
         tooltipFormatter: (params: any) => {
           const idx = params[0]?.value?.[0]
           let result = `Sample #${idx}<br/>`

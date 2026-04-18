@@ -8,7 +8,10 @@ import {
 } from './biquad'
 
 export const PPG_SAMPLE_RATE = 50
-export const PPG_TRANSIENT_SAMPLES = 50 // ~1s warm-up
+// 0.5Hz HP biquad needs ~3 time constants to settle (τ = 1/(2π·0.5) ≈ 0.32s),
+// so ~3s warm-up to fully suppress the initial ringing transient. 50 samples (1s)
+// was too short — the filter still had large oscillations visible on the chart.
+export const PPG_TRANSIENT_SAMPLES = 150 // ~3s warm-up
 
 const BUTTERWORTH_Q = 1 / Math.SQRT2
 const HP_COEFS = highpassCoefs(PPG_SAMPLE_RATE, 0.5, BUTTERWORTH_Q)

@@ -1,6 +1,7 @@
 // Design Ref: §3.2 — pure ingest for ACC raw + analysis
 import type { AccAnalysis, AccSample, DataPoint } from '../../types/sensor'
 import { ACC_BUFFER_SIZE, type AccBufferState } from './types'
+import { appendCap } from './bufferUtil'
 
 export const createAccBufferState = (): AccBufferState => ({
   x: [],
@@ -12,24 +13,26 @@ export const createAccBufferState = (): AccBufferState => ({
 
 export function ingestAccRaw(prev: AccBufferState, samples: AccSample[]): AccBufferState {
   if (samples.length === 0) return prev
-  const newX: DataPoint[] = []
-  const newY: DataPoint[] = []
-  const newZ: DataPoint[] = []
-  const newMag: DataPoint[] = []
+  const n = samples.length
+  const newX: DataPoint[] = new Array(n)
+  const newY: DataPoint[] = new Array(n)
+  const newZ: DataPoint[] = new Array(n)
+  const newMag: DataPoint[] = new Array(n)
   let idx = prev.sampleIndex
-  for (const s of samples) {
-    newX.push({ index: idx, value: s.x })
-    newY.push({ index: idx, value: s.y })
-    newZ.push({ index: idx, value: s.z })
+  for (let k = 0; k < n; k++) {
+    const s = samples[k]
+    newX[k] = { index: idx, value: s.x }
+    newY[k] = { index: idx, value: s.y }
+    newZ[k] = { index: idx, value: s.z }
     const mag = s.magnitude ?? Math.sqrt(s.x * s.x + s.y * s.y + s.z * s.z)
-    newMag.push({ index: idx, value: mag })
+    newMag[k] = { index: idx, value: mag }
     idx++
   }
   return {
-    x: [...prev.x, ...newX].slice(-ACC_BUFFER_SIZE),
-    y: [...prev.y, ...newY].slice(-ACC_BUFFER_SIZE),
-    z: [...prev.z, ...newZ].slice(-ACC_BUFFER_SIZE),
-    magnitude: [...prev.magnitude, ...newMag].slice(-ACC_BUFFER_SIZE),
+    x: appendCap(prev.x, newX, ACC_BUFFER_SIZE),
+    y: appendCap(prev.y, newY, ACC_BUFFER_SIZE),
+    z: appendCap(prev.z, newZ, ACC_BUFFER_SIZE),
+    magnitude: appendCap(prev.magnitude, newMag, ACC_BUFFER_SIZE),
     sampleIndex: idx,
   }
 }

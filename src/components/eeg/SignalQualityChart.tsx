@@ -8,9 +8,7 @@ interface Props {
 }
 
 export function SignalQualityChart({ channel }: Props) {
-  const sqCh1 = useEegStore((s) => s.sqCh1)
-  const sqCh2 = useEegStore((s) => s.sqCh2)
-  const sqData = channel === 'ch1' ? sqCh1 : sqCh2
+  const sqData = useEegStore((s) => (channel === 'ch1' ? s.sqCh1 : s.sqCh2))
   const color = channel === 'ch1' ? '#3b82f6' : '#ef4444'
 
   const chartData = useMemo(() => sqData.map((p, i) => [i, p.value]), [sqData])

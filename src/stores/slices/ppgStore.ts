@@ -29,6 +29,7 @@ export const usePpgStore = create<PpgState>((set) => ({
         redFiltered: next.redFiltered,
         irFilter: next.irFilter,
         redFilter: next.redFilter,
+        sqi: next.sqi,
         sampleIndex: next.sampleIndex,
       }
     }),

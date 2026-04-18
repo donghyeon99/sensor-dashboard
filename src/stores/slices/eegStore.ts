@@ -24,6 +24,8 @@ export const useEegStore = create<EegState>((set) => ({
       return {
         fp1: next.fp1,
         fp2: next.fp2,
+        fp1Raw: next.fp1Raw,
+        fp2Raw: next.fp2Raw,
         sqCh1: next.sqCh1,
         sqCh2: next.sqCh2,
         sampleIndex: next.sampleIndex,

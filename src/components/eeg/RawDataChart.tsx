@@ -8,9 +8,8 @@ interface Props {
 }
 
 export function RawDataChart({ channel }: Props) {
-  const fp1 = useEegStore((s) => s.fp1)
-  const fp2 = useEegStore((s) => s.fp2)
-  const data = channel === 'ch1' ? fp1 : fp2
+  // Subscribe ONLY to the channel this chart renders — avoids cross-channel re-renders.
+  const data = useEegStore((s) => (channel === 'ch1' ? s.fp1 : s.fp2))
   const color = channel === 'ch1' ? '#3b82f6' : '#ef4444'
   const label = channel === 'ch1' ? 'FP1 (Ch1)' : 'FP2 (Ch2)'
 

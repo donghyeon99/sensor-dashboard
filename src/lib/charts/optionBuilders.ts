@@ -192,7 +192,7 @@ export interface SpectrumOptions {
 export function buildSpectrumOption({
   series,
   yMin = 0,
-  yMax = 60,
+  yMax = 85,
   fMin = 1,
   fMax = 45,
   markBands = true,
@@ -218,7 +218,7 @@ export function buildSpectrumOption({
         ],
         [
           { name: 'Gamma', xAxis: 30, itemStyle: { color: 'rgba(148,0,211,0.08)' } },
-          { xAxis: 45 },
+          { xAxis: 50 },
         ],
       ]
     : undefined

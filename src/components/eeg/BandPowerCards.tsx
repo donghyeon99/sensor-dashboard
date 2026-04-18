@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useEegStore } from '../../stores/slices/eegStore'
 import { useConnectionStore } from '../../stores/connectionStore'
 import { computeEegPower, EEG_BANDS } from '../../lib/dsp/spectrum'
@@ -8,40 +8,74 @@ const BAND_META: Record<typeof EEG_BANDS[number]['key'], { name: string; range: 
   theta: { name: 'Theta', range: '4-8Hz', color: 'bg-orange-500', desc: 'Drowsy/meditation' },
   alpha: { name: 'Alpha', range: '8-13Hz', color: 'bg-green-500', desc: 'Relaxed/calm' },
   beta: { name: 'Beta', range: '13-30Hz', color: 'bg-blue-500', desc: 'Focused/thinking' },
-  gamma: { name: 'Gamma', range: '30-45Hz', color: 'bg-purple-500', desc: 'High cognition' },
+  gamma: { name: 'Gamma', range: '30-45Hz', color: 'bg-purple-500', desc: 'High cognition' }, // matches linkband UI gamma cap
+
+}
+
+// Throttle Morlet recompute — it's ~1M+ ops per call and would burn the main thread
+// if run on every SSE packet (≥10Hz). 300ms matches a comfortable visual update rate.
+const BAND_RECOMPUTE_MS = 300
+
+type BandRow = {
+  key: typeof EEG_BANDS[number]['key']
+  name: string
+  range: string
+  color: string
+  desc: string
+  ch1: number
+  ch2: number
+  combined: number
+  normalizedCh1: number
+  normalizedCh2: number
+  normalizedCombined: number
 }
 
 export function BandPowerCards() {
-  const fp1 = useEegStore((s) => s.fp1)
-  const fp2 = useEegStore((s) => s.fp2)
   const connected = useConnectionStore((s) => s.connected)
+  const [bandData, setBandData] = useState<BandRow[] | null>(null)
+  const lastComputeRef = useRef(0)
+  const rafRef = useRef<number | null>(null)
 
-  const bandData = useMemo(() => {
-    const computed = computeEegPower(
-      fp1.map((p) => p.value),
-      fp2.map((p) => p.value),
-      250,
-    )
-    if (!computed) return null
-    const results = EEG_BANDS.map((band) => {
-      const b = computed.bands[band.key]
-      const meta = BAND_META[band.key]
-      return {
-        key: band.key,
-        ...meta,
-        ch1: b.ch1Db,
-        ch2: b.ch2Db,
-        combined: (b.ch1Db + b.ch2Db) / 2,
+  useEffect(() => {
+    let cancelled = false
+    const tick = () => {
+      if (cancelled) return
+      const now = performance.now()
+      if (now - lastComputeRef.current >= BAND_RECOMPUTE_MS) {
+        lastComputeRef.current = now
+        const { fp1Raw, fp2Raw } = useEegStore.getState()
+        const computed = computeEegPower(fp1Raw, fp2Raw, 250)
+        if (computed) {
+          const results = EEG_BANDS.map((band) => {
+            const b = computed.bands[band.key]
+            const meta = BAND_META[band.key]
+            return {
+              key: band.key,
+              ...meta,
+              ch1: b.ch1Db,
+              ch2: b.ch2Db,
+              combined: (b.ch1Db + b.ch2Db) / 2,
+            }
+          })
+          const maxPower = Math.max(...results.map((r) => Math.max(r.ch1, r.ch2)), 1)
+          setBandData(
+            results.map((r) => ({
+              ...r,
+              normalizedCh1: (r.ch1 / maxPower) * 100,
+              normalizedCh2: (r.ch2 / maxPower) * 100,
+              normalizedCombined: (r.combined / maxPower) * 100,
+            })),
+          )
+        }
       }
-    })
-    const maxPower = Math.max(...results.map((r) => Math.max(r.ch1, r.ch2)), 1)
-    return results.map((r) => ({
-      ...r,
-      normalizedCh1: (r.ch1 / maxPower) * 100,
-      normalizedCh2: (r.ch2 / maxPower) * 100,
-      normalizedCombined: (r.combined / maxPower) * 100,
-    }))
-  }, [fp1, fp2])
+      rafRef.current = requestAnimationFrame(tick)
+    }
+    rafRef.current = requestAnimationFrame(tick)
+    return () => {
+      cancelled = true
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
+    }
+  }, [])
 
   if (!connected || !bandData) {
     return (

@@ -27,7 +27,7 @@ export function PPGVisualizer() {
           <div className="text-sm text-metric-text mb-4">Signal quality and electrode contact monitoring.</div>
           <div className="w-full h-80">
             <PPGLeadOffBanner context="ppg-sqi" className="mb-3" />
-            <PPGSQIChart channel="ch1" />
+            <PPGSQIChart />
           </div>
         </div>
       </div>
