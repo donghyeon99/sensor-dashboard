@@ -57,13 +57,20 @@ export function BandPowerCards() {
               combined: (b.ch1Db + b.ch2Db) / 2,
             }
           })
-          const maxPower = Math.max(...results.map((r) => Math.max(r.ch1, r.ch2)), 1)
+          // Match linkband UI normalization exactly: per-channel max, then global,
+          // and skip normalization (return 0%) when max ≤ 0 to avoid the
+          // div-by-tiny-number explosion that the previous Math.max(..., 1) floor
+          // introduced (e.g. all dBs ≈ 0.3 → max=1 → 30% bars on ~0 power).
+          const maxCh1 = Math.max(...results.map((r) => r.ch1))
+          const maxCh2 = Math.max(...results.map((r) => r.ch2))
+          const maxPower = Math.max(maxCh1, maxCh2)
+          const norm = (v: number) => (maxPower > 0 ? Math.max(0, (v / maxPower) * 100) : 0)
           setBandData(
             results.map((r) => ({
               ...r,
-              normalizedCh1: (r.ch1 / maxPower) * 100,
-              normalizedCh2: (r.ch2 / maxPower) * 100,
-              normalizedCombined: (r.combined / maxPower) * 100,
+              normalizedCh1: norm(r.ch1),
+              normalizedCh2: norm(r.ch2),
+              normalizedCombined: norm(r.combined),
             })),
           )
         }

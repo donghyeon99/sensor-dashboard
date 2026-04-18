@@ -34,6 +34,7 @@ export interface PpgBufferState {
   bpmHistory: DataPoint[]
   spo2History: DataPoint[]
   historyIndex: number
+  rawLeadOff: { ch1: boolean; ch2: boolean }
 }
 
 export interface AccBufferState {

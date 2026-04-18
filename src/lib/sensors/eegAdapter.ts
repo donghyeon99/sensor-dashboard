@@ -21,6 +21,11 @@ function appendEegSqiIncremental(
 ): DataPoint[] {
   if (newCount === 0) return prevSqi
   const len = filteredVals.length
+  // Guard: SQI windows need at least EEG_SQI_WINDOW samples. During cold start
+  // (first ~125 samples), reading filteredVals[j] past the end returns undefined,
+  // which propagates NaN through mean/var/sum and poisons the SQI buffer. Just
+  // return prevSqi unchanged until we have a full window.
+  if (len < EEG_SQI_WINDOW) return prevSqi
   const firstWinStart = Math.max(0, len - EEG_SQI_WINDOW - newCount + 1)
   const lastWinStart = Math.max(0, len - EEG_SQI_WINDOW)
   const updatedAmp = new Array<number>(EEG_SQI_WINDOW + newCount).fill(0)

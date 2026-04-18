@@ -31,6 +31,7 @@ export const usePpgStore = create<PpgState>((set) => ({
         redFilter: next.redFilter,
         sqi: next.sqi,
         sampleIndex: next.sampleIndex,
+        rawLeadOff: next.rawLeadOff,
       }
     }),
   ingestAnalysis: (raw) =>

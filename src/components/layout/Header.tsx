@@ -1,6 +1,11 @@
 import { ConnectPanel } from '../connect/ConnectPanel'
 
+const VERSION = __APP_VERSION__
+const GIT_SHA = __APP_GIT_SHA__
+const GIT_TAG = __APP_GIT_TAG__
+
 export function Header() {
+  const versionLabel = GIT_TAG ? `${GIT_TAG} · ${GIT_SHA}` : `v${VERSION} · ${GIT_SHA}`
   return (
     <header className="flex justify-between items-center px-7 py-4 bg-bg-card/90 border-b border-border backdrop-blur-sm sticky top-0 z-50">
       <div className="flex items-center gap-3.5">
@@ -10,8 +15,16 @@ export function Header() {
           </svg>
         </div>
         <div>
-          <div className="text-[17px] font-semibold text-text-primary tracking-tight">
-            LuxAcademy Sensor Dashboard
+          <div className="flex items-center gap-2">
+            <span className="text-[17px] font-semibold text-text-primary tracking-tight">
+              LuxAcademy Sensor Dashboard
+            </span>
+            <span
+              className="text-[10px] font-mono text-text-secondary border border-border rounded px-1.5 py-0.5"
+              title={`version ${VERSION}, commit ${GIT_SHA}${GIT_TAG ? `, tag ${GIT_TAG}` : ''}`}
+            >
+              {versionLabel}
+            </span>
           </div>
           <div className="text-xs text-text-secondary mt-px">
             Brain-Computer Interface Monitor

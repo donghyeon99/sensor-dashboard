@@ -16,6 +16,7 @@ export const createPpgBufferState = (): PpgBufferState => ({
   bpmHistory: [],
   spo2History: [],
   historyIndex: 0,
+  rawLeadOff: { ch1: false, ch2: false },
 })
 
 const SQI_WINDOW = 25 // mirrors ppgPipeline.ts SQI_WINDOW
@@ -36,6 +37,10 @@ function appendSqiIncremental(
 ): DataPoint[] {
   if (newCount === 0) return prevSqi
   const len = filteredVals.length
+  // Guard: window math reads filteredVals[j] for j up to len-1+window. During
+  // cold start (len < SQI_WINDOW) those reads go past the end and yield NaN
+  // that contaminates downstream SQI/overall arrays. Return prev unchanged.
+  if (len < SQI_WINDOW) return prevSqi
   // We need to compute SQI for sample positions [len - newCount, len - 1].
   // The last window covering position k starts at min(k, len - SQI_WINDOW).
   // Recompute window positions whose right edge is now ≥ len - newCount.
@@ -133,6 +138,13 @@ export function ingestPpgRaw(prev: PpgBufferState, samples: PpgRawSample[]): Ppg
   }
   const overallSQI = appendCap(prev.sqi.overallSQI, newOverall, PPG_BUFFER_SIZE)
 
+  // Track per-sample lead-off from latest sample (red=ch1, ir=ch2 convention)
+  const lastSample = samples[samples.length - 1]
+  const rawLeadOff = {
+    ch1: Boolean(lastSample.leadOff?.ch1),
+    ch2: Boolean(lastSample.leadOff?.ch2),
+  }
+
   return {
     ...prev,
     ir: appendCap(prev.ir, newIr, PPG_BUFFER_SIZE),
@@ -143,6 +155,7 @@ export function ingestPpgRaw(prev: PpgBufferState, samples: PpgRawSample[]): Ppg
     irFilter,
     redFilter,
     sampleIndex: idx,
+    rawLeadOff,
   }
 }
 

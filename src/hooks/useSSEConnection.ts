@@ -52,9 +52,7 @@ const EEG_MAX_BUF = EEG_SR * 6   // 6s worth (EEG arrives 13% faster than nomina
 const PPG_MAX_BUF = PPG_SR * 4
 const ACC_MAX_BUF = ACC_SR * 5
 
-// Don't start playback until we've buffered this much — prevents initial stutter.
-// Lower = faster initial display, higher = more jitter tolerance.
-const PREBUFFER_RATIO = 0.2  // wait for 20% of target (~200ms of data) before draining
+// Note: priming was removed — see drainQueue for rationale.
 
 const eegQueue: EegRawSample[] = []
 const ppgQueue: PpgRawSample[] = []
@@ -62,20 +60,21 @@ const accQueue: AccSample[] = []
 
 // Per-stream playback state.
 //   acc:        fractional sample carry (controls drain rate)
-//   primed:     true once we've buffered enough to start steady playback
 //   lastSample: last sample drained — used to "hold" the line during brief SSE
 //               gaps so the chart keeps scrolling at constant rate rather than
 //               freezing. Capped at HOLD_MAX_MS so true silence is still visible.
 //   heldSinceMs: timestamp when we started holding (no real samples since)
-type DrainState<T> = { acc: number; primed: boolean; lastSample: T | null; heldSinceMs: number }
-const eegState: DrainState<EegRawSample> = { acc: 0, primed: false, lastSample: null, heldSinceMs: 0 }
-const ppgState: DrainState<PpgRawSample> = { acc: 0, primed: false, lastSample: null, heldSinceMs: 0 }
-const accState: DrainState<AccSample> = { acc: 0, primed: false, lastSample: null, heldSinceMs: 0 }
+type DrainState<T> = { acc: number; lastSample: T | null; heldSinceMs: number }
+const eegState: DrainState<EegRawSample> = { acc: 0, lastSample: null, heldSinceMs: 0 }
+const ppgState: DrainState<PpgRawSample> = { acc: 0, lastSample: null, heldSinceMs: 0 }
+const accState: DrainState<AccSample> = { acc: 0, lastSample: null, heldSinceMs: 0 }
 
-// Up to 800ms of held samples before we let the chart pause. Captured live data
-// showed inter-packet gaps up to 1.7s for PPG and 3s for ACC; 800ms covers most
-// while keeping fake (held) data short enough not to mislead.
-const HOLD_MAX_MS = 800
+// Per-stream hold-last cap. EEG/PPG change quickly so a long flat hold would look
+// fake (and could be misread as real signal). ACC changes slowly — gravity
+// dominates when stationary — so a longer hold matches reality and bridges the
+// device's naturally large packet gaps (up to 3s measured).
+const HOLD_MS_FAST = 800   // EEG, PPG
+const HOLD_MS_ACC = 3500   // ACC — covers worst-case observed packet gap
 
 type ImmediatePending = {
   eegAnalysis: (EegAnalysis & Record<string, unknown>) | null
@@ -104,19 +103,20 @@ function drainQueue<T>(
   maxBuf: number,
   state: DrainState<T>,
   nowMs: number,
+  holdMaxMs: number,
 ): T[] {
   // Cap runaway growth (tab backgrounded for a long time, etc.)
   if (queue.length > maxBuf) {
     queue.splice(0, queue.length - maxBuf)
   }
+  void target // referenced to satisfy linters; kept for future per-stream tuning
 
-  // Pre-buffer phase: wait until we've collected enough to absorb jitter without
-  // ever underrunning. Once primed, we play steadily at exactly `sr` samples/sec.
-  if (!state.primed) {
-    if (queue.length < target * PREBUFFER_RATIO) return []
-    state.primed = true
-    state.acc = 0
-  }
+  // No pre-buffer phase. Earlier versions waited for `target * PREBUFFER_RATIO`
+  // samples before starting, but small-burst packets (e.g. 14-sample PPG bursts
+  // when the threshold was 15) could leave `primed` stuck at false forever — a
+  // permanent chart freeze, recoverable only by reconnect. Hold-last-sample
+  // (below) already absorbs inter-packet gaps, and the playback queue itself
+  // smooths bursts. Just start draining as soon as samples arrive.
 
   // Strict constant rate — no catch-up, no overshoot acceleration. The timer ticks.
   state.acc += (sr * elapsedMs) / 1000
@@ -152,7 +152,7 @@ function drainQueue<T>(
   }
   if (synthCount > 0 && state.lastSample !== null) {
     if (state.heldSinceMs === 0) state.heldSinceMs = nowMs
-    if (nowMs - state.heldSinceMs <= HOLD_MAX_MS) {
+    if (nowMs - state.heldSinceMs <= holdMaxMs) {
       // Shallow clone the last sample so downstream mutations don't surprise us
       const held = state.lastSample
       for (let i = 0; i < synthCount; i++) out.push({ ...held } as T)
@@ -167,9 +167,14 @@ function drainQueue<T>(
 const IDLE_RESYNC_MS = 200
 
 function frameLoop(now: number) {
+  // Hardening: a throw anywhere inside this body must not leave rafId set to a
+  // stale id (which would block ensureFrameLoop from restarting). Clear rafId
+  // first; reschedule in finally regardless of success/failure.
+  rafId = null
   const rawElapsed = lastFrameTs === 0 ? 16 : now - lastFrameTs
   const elapsedMs = lastFrameTs === 0 ? 16 : Math.min(100, rawElapsed)
   lastFrameTs = now
+  try {
 
   // Long gap → resync: keep only ~target samples (recent) and reset accumulators.
   // Frame loop wasn't running (rAF paused while tab hidden), so the queue may have
@@ -183,9 +188,9 @@ function frameLoop(now: number) {
     accState.acc = 0
   }
 
-  const eegBatch = drainQueue(eegQueue, elapsedMs, EEG_SR, EEG_TARGET_BUF, EEG_MAX_BUF, eegState, now)
-  const ppgBatch = drainQueue(ppgQueue, elapsedMs, PPG_SR, PPG_TARGET_BUF, PPG_MAX_BUF, ppgState, now)
-  const accBatch = drainQueue(accQueue, elapsedMs, ACC_SR, ACC_TARGET_BUF, ACC_MAX_BUF, accState, now)
+  const eegBatch = drainQueue(eegQueue, elapsedMs, EEG_SR, EEG_TARGET_BUF, EEG_MAX_BUF, eegState, now, HOLD_MS_FAST)
+  const ppgBatch = drainQueue(ppgQueue, elapsedMs, PPG_SR, PPG_TARGET_BUF, PPG_MAX_BUF, ppgState, now, HOLD_MS_FAST)
+  const accBatch = drainQueue(accQueue, elapsedMs, ACC_SR, ACC_TARGET_BUF, ACC_MAX_BUF, accState, now, HOLD_MS_ACC)
 
   if (eegBatch.length > 0) useEegStore.getState().ingestRaw(eegBatch)
   if (ppgBatch.length > 0) usePpgStore.getState().ingestRaw(ppgBatch)
@@ -213,13 +218,18 @@ function frameLoop(now: number) {
     im.battery = null
   }
 
-  // Keep the frame loop running as long as we're connected. Stopping when queues
-  // empty briefly caused a stutter every inter-packet gap: stop → SSE arrives →
-  // ensureFrameLoop restarts → first frame's elapsed = packet gap (~280ms) →
-  // IDLE_RESYNC fired → acc reset → drain=0 frame → visible "뚝". Now we just keep
-  // ticking; idle frames cost ~µs and the loop is paused naturally only on
-  // disconnect/reset (which clears rafId).
-  rafId = requestAnimationFrame(frameLoop)
+  } catch (e) {
+    // Swallow + log: never let a single bad frame kill the loop. The next
+    // requestAnimationFrame schedule below still runs (in finally).
+    // eslint-disable-next-line no-console
+    console.error('[frameLoop] error caught — loop continues:', e)
+  } finally {
+    // Keep the frame loop running as long as we're connected. Stopping when queues
+    // empty briefly caused a stutter every inter-packet gap. Now we just keep
+    // ticking; idle frames cost ~µs and the loop is paused naturally only on
+    // disconnect/reset (which clears rafId).
+    rafId = requestAnimationFrame(frameLoop)
+  }
 }
 
 function ensureFrameLoop() {
@@ -284,9 +294,9 @@ function resetAllSlices() {
     msgCount: 0,
   }
   lastFrameTs = 0
-  eegState.acc = 0; eegState.primed = false; eegState.lastSample = null; eegState.heldSinceMs = 0
-  ppgState.acc = 0; ppgState.primed = false; ppgState.lastSample = null; ppgState.heldSinceMs = 0
-  accState.acc = 0; accState.primed = false; accState.lastSample = null; accState.heldSinceMs = 0
+  eegState.acc = 0; eegState.lastSample = null; eegState.heldSinceMs = 0
+  ppgState.acc = 0; ppgState.lastSample = null; ppgState.heldSinceMs = 0
+  accState.acc = 0; accState.lastSample = null; accState.heldSinceMs = 0
   if (rafId !== null) {
     cancelAnimationFrame(rafId)
     rafId = null
@@ -327,26 +337,59 @@ export function useSSEConnection() {
         const es = new EventSource(sseUrl.replace(/\+/g, '%2B'))
         setEventSource(es)
 
+        // Watchdog: if the server accepts the connection but never sends data
+        // (CONNECTING stuck or silent), surface a warning after STALL_MS so the
+        // user isn't staring at a "Connected" badge with no chart movement.
+        let lastDataAt = performance.now()
+        const STALL_MS = 5000
+        const watchdog = window.setInterval(() => {
+          const since = performance.now() - lastDataAt
+          if (since > STALL_MS && useConnectionStore.getState().connected) {
+            setError(`No data for ${(since / 1000).toFixed(0)}s. SSE may be stalled.`)
+          }
+        }, 1000)
+        es.addEventListener('error', () => window.clearInterval(watchdog), { once: true })
+
         es.onopen = () => {
           setConnected(true)
           setError(null)
+          lastDataAt = performance.now()
         }
 
         es.onmessage = (event) => {
-          const data: SSEMessage = JSON.parse(event.data)
-          if (!useConnectionStore.getState().connected) {
-            setConnected(true)
-            setError(null)
+          // Guard against malformed/partial SSE frames. A single bad packet must
+          // not kill the handler — EventSource keeps the connection open and
+          // subsequent valid messages should still flow.
+          let data: SSEMessage
+          try {
+            data = JSON.parse(event.data) as SSEMessage
+          } catch (e) {
+            // eslint-disable-next-line no-console
+            console.warn('[SSE] malformed JSON, dropping packet:', e)
+            return
           }
-          if (data.type === 'connected') return
-
-          if (data.payload) dispatchPayload(data.payload)
+          try {
+            lastDataAt = performance.now()
+            if (!useConnectionStore.getState().connected) {
+              setConnected(true)
+              setError(null)
+            }
+            if (data.type === 'connected') return
+            if (data.payload) dispatchPayload(data.payload)
+          } catch (e) {
+            // eslint-disable-next-line no-console
+            console.warn('[SSE] dispatch error, continuing:', e)
+          }
         }
 
         es.onerror = () => {
+          window.clearInterval(watchdog)
           if (es.readyState === EventSource.CLOSED) {
             setConnected(false)
             setError('Connection lost. Please check the URL.')
+          } else if (es.readyState === EventSource.CONNECTING) {
+            // EventSource is auto-retrying — keep "connected" but warn the user.
+            setError('Reconnecting to SSE…')
           }
         }
       } catch {
